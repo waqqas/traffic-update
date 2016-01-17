@@ -1,0 +1,21 @@
+#!/bin/bash
+# This is a simple post deploy hook executed after your application
+# is deployed and started.  This script gets executed directly, so
+# it could be python, php, ruby, etc.
+export COMPOSER_HOME="$OPENSHIFT_DATA_DIR/.composer"
+if [ ! -f "$OPENSHIFT_DATA_DIR/composer.phar" ]; then
+    echo !!! composer install ...
+    curl -s https://getcomposer.org/installer | php -- --install-dir=$OPENSHIFT_DATA_DIR
+    php $OPENSHIFT_DATA_DIR/composer.phar global require "fxp/composer-asset-plugin:~1.1.1"
+else
+    echo !!! composer update...
+	php $OPENSHIFT_DATA_DIR/composer.phar self-update
+fi
+
+unset GIT_DIR
+cd $OPENSHIFT_REPO_DIR/app
+php $OPENSHIFT_DATA_DIR/composer.phar install
+
+./init --env=Development --overwrite=All
+
+./yii migrate/up --interactive=0
