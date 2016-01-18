@@ -9,5 +9,8 @@ return [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
         ],
+        'sms' => [
+            'class' => 'frontend\components\SmsSender',
+        ]
     ],
 ];

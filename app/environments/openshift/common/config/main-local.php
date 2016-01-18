@@ -23,5 +23,11 @@ return [
             // for the mailer to send real emails.
             'useFileTransport' => true,
         ],
+        'sms' => [
+            'username' => '8655_traffic',
+            'password' => 'AsFgT845',
+            'originator' => '8655',
+            'smsGatewayUrl' => 'http://smsctp1.eocean.us:24555/api'
+        ],
     ],
 ];

@@ -21,4 +21,14 @@ class SmsController extends Controller
         $mo->save();
     }
 
+    public function actionMt(){
+        $text = Yii::$app->request->get('text', null);
+        $to = Yii::$app->request->get('to', null);
+
+        if( !is_null($to) && !is_null($text)){
+            Yii::$app->sms->send($to, $text);
+        }
+    }
+
+
 }
