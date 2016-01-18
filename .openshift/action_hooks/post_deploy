@@ -14,7 +14,7 @@ fi
 
 #unset GIT_DIR
 cd $OPENSHIFT_REPO_DIR/app
-php $OPENSHIFT_DATA_DIR/composer.phar update
+php $OPENSHIFT_DATA_DIR/composer.phar install
 
 ./init --env=$YII_INIT_ENV --overwrite=$YII_INIT_OVERWRITE
 
