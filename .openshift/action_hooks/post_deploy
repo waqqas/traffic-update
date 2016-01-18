@@ -20,4 +20,4 @@ php $OPENSHIFT_DATA_DIR/composer.phar install
 
 ./yii migrate/up --interactive=0
 
-ln -sf $OPENSHIFT_REPO_DIR/app/frontend/web php
+ln -sf ${OPENSHIFT_REPO_DIR}app/frontend/web php
