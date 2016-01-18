@@ -14,22 +14,23 @@ class SmsSender
 
     public function send($recipient, $text)
     {
-        $url = http_build_url($this->smsGatewayUrl, [
-            'query' => [
+        $parts = [
+            'query' => http_build_query([
                 'username' => $this->username,
                 'password' => $this->password,
                 'originator' => $this->originator,
-                'messagedata' => $text,
-                'recipient' => $recipient,
                 'action' => 'sendmessage',
-            ]
-        ],
-            HTTP_URL_STRIP_AUTH | HTTP_URL_JOIN_PATH | HTTP_URL_JOIN_QUERY | HTTP_URL_STRIP_FRAGMENT
-        );
+                'recipient' => $recipient,
+                'messagedata' => $text,
+            ])
+        ];
 
-        Yii::trace('url = '. $url);
+        $url = http_build_url($this->smsGatewayUrl, $parts, HTTP_URL_JOIN_PATH | HTTP_URL_JOIN_QUERY | HTTP_URL_STRIP_FRAGMENT);
+
+//        Yii::error("url = " . $url);
 
         $ch = curl_init();
+
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
@@ -37,6 +38,6 @@ class SmsSender
 
         curl_close($ch);
 
-        Yii::trace("response = ", print_r($response, true));
+        Yii::error("response = ", print_r($response, true));
     }
 }
