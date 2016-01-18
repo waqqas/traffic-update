@@ -1,11 +1,12 @@
 <?php
 namespace frontend\controllers;
 
-use common\models\Smsmo;
 use Yii;
 use yii\web\Controller;
+use common\models\Smsmo;
+use common\models\Smsmt;
 
-use vova07\console\ConsoleRunner;
+
 
 class SmsController extends Controller
 {
@@ -30,8 +31,16 @@ class SmsController extends Controller
         $text = Yii::$app->request->get('text', null);
         $to = Yii::$app->request->get('to', null);
 
+        $mt = new Smsmt();
+
         if( !is_null($to) && !is_null($text)){
-            Yii::$app->sms->send($to, $text);
+            $mt->recipient = $to;
+            $mt->status = "queued";
+            $mt->text = $text;
+
+            $mt->save();
+
+            Yii::$app->consoleRunner->run('sms/mt '. $mt->id);
         }
     }
 
