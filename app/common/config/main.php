@@ -10,7 +10,7 @@ return [
             'showScriptName' => false,
         ],
         'sms' => [
-            'class' => 'frontend\components\SmsSender',
+            'class' => 'common\components\SmsSender',
         ]
     ],
 ];

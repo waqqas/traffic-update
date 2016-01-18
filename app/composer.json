@@ -1,10 +1,10 @@
 {
-    "name": "yiisoft/yii2-app-advanced",
-    "description": "Yii 2 Advanced Project Template",
-    "keywords": ["yii2", "framework", "advanced", "project template"],
-    "homepage": "http://www.yiiframework.com/",
+    "name": "roadez/trafficupate",
+    "description": "Traffic Update",
+    "keywords": ["yii2", "framework", "traffic", "sms", "roadez"],
+    "homepage": "http://www.roadez.com/",
     "type": "project",
-    "license": "BSD-3-Clause",
+    "license": "Proprietary",
     "support": {
         "issues": "https://github.com/yiisoft/yii2/issues?state=open",
         "forum": "http://www.yiiframework.com/forum/",
@@ -18,7 +18,7 @@
         "yiisoft/yii2": ">=2.0.6",
         "yiisoft/yii2-bootstrap": "*",
         "yiisoft/yii2-swiftmailer": "*",
-        "guzzlehttp/guzzle": "^6.1"
+        "jakeasmith/http_build_url": "^1.0"
     },
     "require-dev": {
         "yiisoft/yii2-codeception": "*",
