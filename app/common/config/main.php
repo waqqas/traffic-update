@@ -11,6 +11,10 @@ return [
         ],
         'sms' => [
             'class' => 'common\components\SmsSender',
+        ],
+        'consoleRunner' => [
+            'class' => 'vova07\console\ConsoleRunner',
+            'file' => '@app/../yii',
         ]
     ],
 ];

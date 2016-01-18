@@ -5,6 +5,8 @@ use common\models\Smsmo;
 use Yii;
 use yii\web\Controller;
 
+use vova07\console\ConsoleRunner;
+
 class SmsController extends Controller
 {
     public $enableCsrfValidation = false;
@@ -19,6 +21,9 @@ class SmsController extends Controller
         $mo->status = 'received';
 
         $mo->save();
+
+        Yii::$app->consoleRunner->run('sms/mo ' . $mo->id );
+
     }
 
     public function actionMt(){
