@@ -3,6 +3,7 @@
 namespace common\models;
 
 use Yii;
+use yii\behaviors\TimestampBehavior;
 
 /**
  * This is the model class for table "smsmo".
@@ -31,9 +32,9 @@ class Smsmo extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['msisdn', 'operator', 'text', 'created_at', 'updated_at'], 'required'],
+            [['msisdn', 'operator', 'text'], 'required'],
             [['text'], 'string'],
-            [['created_at', 'updated_at'], 'integer'],
+//            [['created_at', 'updated_at'], 'integer'],
             [['msisdn', 'operator'], 'string', 'max' => 32],
             [['status'], 'string', 'max' => 255]
         ];
@@ -52,6 +53,16 @@ class Smsmo extends \yii\db\ActiveRecord
             'status' => 'Status',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+            TimestampBehavior::className(),
         ];
     }
 }
