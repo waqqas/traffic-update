@@ -27,8 +27,6 @@ class MapQuest
 
         $query = http_build_query([
             'key' => $this->apiKey,
-            'from' => $from,
-            'to' => $to,
         ]);
 
         $apiUrl = $this->apiServerUrl . "/" . $this->serviceName . "/" . $this->apiVersion . "/route";
@@ -38,12 +36,21 @@ class MapQuest
         ]);
 
         $request = new Request($apiUrl);
-        $request->setMethod('GET');
+        $request->setMethod('POST');
+        $request->setJsonBody([
+            "locations" => [
+                $from, $to
+            ],
+            "options" => [
+                'unit' => 'k',
+            ]
+        ]);
 
         $response = $http->exec($request);
 
         if (!$response->hasError()) {
-            return "<pre>" . print_r(json_decode($response->body, true), true) . "</pre>";
+//            return "<pre>" . print_r(json_decode($response->body, true), true) . "</pre>";
+            return $response->body;
         } else {
             return "<pre>" . print_r($response, true) . "</pre>";
         }

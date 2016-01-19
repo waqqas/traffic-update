@@ -32,5 +32,8 @@ return [
         'mapQuest' => [
             'apiKey' => 'unjfqBcvRsGFg7L9GCv9uvDCzG0gZpAp',
         ],
+        'graphHopper' => [
+            'apiKey' => '3090ca2b-a4b6-422b-be18-24f7a68422d9',
+        ],
     ],
 ];

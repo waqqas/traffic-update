@@ -22,5 +22,9 @@ return [
             'serviceName' => 'directions',
             'apiVersion' => 'v2',
         ],
+        'graphHopper' => [
+            'class' => 'common\components\GraphHopper',
+            'apiServerUrl' => 'https://graphhopper.com/api/1',
+        ],
     ],
 ];
