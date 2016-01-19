@@ -15,6 +15,12 @@ return [
         'consoleRunner' => [
             'class' => 'vova07\console\ConsoleRunner',
             'file' => '@app/../yii',
-        ]
+        ],
+        'mapQuest' => [
+            'class' => 'common\components\MapQuest',
+            'apiServerUrl' => 'http://www.mapquestapi.com',
+            'serviceName' => 'directions',
+            'apiVersion' => 'v2',
+        ],
     ],
 ];

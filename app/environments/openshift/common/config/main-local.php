@@ -29,5 +29,8 @@ return [
             'originator' => '8655',
             'smsGatewayUrl' => 'http://smsctp1.eocean.us:24555/api'
         ],
+        'mapQuest' => [
+            'apiKey' => 'unjfqBcvRsGFg7L9GCv9uvDCzG0gZpAp',
+        ],
     ],
 ];

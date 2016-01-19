@@ -20,7 +20,8 @@
         "yiisoft/yii2-swiftmailer": "*",
         "jakeasmith/http_build_url": "^1.0",
         "giggsey/libphonenumber-for-php": "^7.2",
-        "vova07/yii2-console-runner-extension": "*"
+        "vova07/yii2-console-runner-extension": "*",
+        "hightman/httpclient": "*"
     },
     "require-dev": {
         "yiisoft/yii2-codeception": "*",
