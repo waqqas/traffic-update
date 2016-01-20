@@ -16,4 +16,11 @@ class GraphhopperController extends Controller{
         return Yii::$app->graphHopper->getRoute($from, $to);
 
     }
+
+    public function actionGeocode(){
+        $name = Yii::$app->request->get('name', '');
+
+        return Yii::$app->graphHopper->geocode($name);
+
+    }
 }

@@ -58,4 +58,39 @@ class GraphHopper{
         }
 
     }
+
+    public function geocode($name, $reverse = false){
+
+        $query = http_build_query([
+            'q' => $name,
+            'locale' => 'en',
+            'debug' => YII_DEBUG ? 'true': 'false',
+            'key' => $this->apiKey,
+            'reverse' => $reverse? 'true':'false',
+        ]);
+
+
+        $apiUrl = http_build_url($this->apiServerUrl . "/geocode", [
+            'query' => $query,
+        ], HTTP_URL_JOIN_PATH | HTTP_URL_JOIN_QUERY);
+
+        Yii::info('api url = ' . $apiUrl);
+
+
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        $response = curl_exec($ch);
+
+        curl_close($ch);
+
+        if ($response) {
+            return $response;
+        } else {
+            return "<pre>" . print_r($response, true) . "</pre>";
+        }
+
+    }
 }
