@@ -19,8 +19,9 @@ class GraphhopperController extends Controller{
 
     public function actionGeocode(){
         $name = Yii::$app->request->get('name', '');
+        $reverse = Yii::$app->request->get('reverse', false);
 
-        return Yii::$app->graphHopper->geocode($name);
+        return Yii::$app->graphHopper->geocode($name, $reverse);
 
     }
 }
