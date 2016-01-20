@@ -61,15 +61,20 @@ class GraphHopper{
 
     public function geocode($name, $reverse = false){
 
-        $query = http_build_query([
+        $params = [
             'q' => $name,
             'locale' => 'en',
             'debug' => YII_DEBUG ? 'true': 'false',
             'key' => $this->apiKey,
             'reverse' => $reverse? 'true':'false',
-        ]);
+        ];
 
+        if(isset(Yii::$app->params['defaultLocation'])) {
+            $params['point'] = Yii::$app->params['defaultLocation'];
+        }
 
+        // build API url
+        $query = http_build_query($params);
         $apiUrl = http_build_url($this->apiServerUrl . "/geocode", [
             'query' => $query,
         ], HTTP_URL_JOIN_PATH | HTTP_URL_JOIN_QUERY);
@@ -77,6 +82,7 @@ class GraphHopper{
         Yii::info('api url = ' . $apiUrl);
 
 
+        // Make HTTP request
         $ch = curl_init();
 
         curl_setopt($ch, CURLOPT_URL, $apiUrl);
