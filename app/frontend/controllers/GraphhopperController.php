@@ -14,7 +14,7 @@ class GraphhopperController extends Controller{
         $from = Yii::$app->request->get('from', '');
         $to = Yii::$app->request->get('to', '');
 
-        return Yii::$app->graphHopper->getRoute($from, $to);
+        return Yii::$app->graphHopper->route($from, $to);
 
     }
 
@@ -31,10 +31,10 @@ class GraphhopperController extends Controller{
         $from = Yii::$app->request->get('from', '');
         $to = Yii::$app->request->get('to', '');
 
-        $fromCoord = Yii::$app->graphHopper->geocode($from);
-        $toCoord = Yii::$app->graphHopper->geocode($to);
+        $fromCoord = json_decode(Yii::$app->graphHopper->geocode($from));
+        $toCoord = json_decode(Yii::$app->graphHopper->geocode($to));
 
-        return Yii::$app->graphHopper->getRoute(GraphHopper::getLanLongFromGeocode($fromCoord), GraphHopper::getLanLongFromGeocode($toCoord));
+        return Yii::$app->graphHopper->route(GraphHopper::getLanLongFromGeocode($fromCoord), GraphHopper::getLanLongFromGeocode($toCoord));
 
     }
 }

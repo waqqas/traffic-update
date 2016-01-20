@@ -4,7 +4,8 @@ namespace common\components;
 
 use Yii;
 
-class GraphHopper{
+class GraphHopper
+{
 
     public $apiServerUrl; // https://graphhopper.com/api/1
 
@@ -18,15 +19,16 @@ class GraphHopper{
     http://traffic.dev/graphhopper/route?from=51.131108,12.414551&to=48.224673,3.867187
 
      */
-    public function getRoute($from, $to){
+    public function route($from, $to)
+    {
 
-        if(empty($from) || empty($to))
+        if (empty($from) || empty($to))
             return;
 
         $query = http_build_query([
             'vehicle' => 'car',
             'locale' => 'en',
-//            'debug' => YII_DEBUG ? 'true': 'false',
+            'debug' => YII_DEBUG ? 'true' : 'false',
             'key' => $this->apiKey,
             'points_encoded' => 'false',
 //            'calc_points' => 'true',
@@ -34,7 +36,7 @@ class GraphHopper{
             'point' => [$from, $to],
         ]);
 
-        // remove [0]
+        // remove [x]
         $query = preg_replace('/(%5B[0-9]*%5D)/i', '', $query);
 
 
@@ -54,25 +56,22 @@ class GraphHopper{
 
         curl_close($ch);
 
-        if ($response) {
-            return $response;
-        } else {
-            return "<pre>" . print_r($response, true) . "</pre>";
-        }
+        return $response;
 
     }
 
-    public function geocode($name, $reverse = false){
+    public function geocode($name, $reverse = false)
+    {
 
         $params = [
             'q' => $name,
             'locale' => 'en',
-            'debug' => YII_DEBUG ? 'true': 'false',
+            'debug' => YII_DEBUG ? 'true' : 'false',
             'key' => $this->apiKey,
-            'reverse' => $reverse? 'true':'false',
+            'reverse' => $reverse ? 'true' : 'false',
         ];
 
-        if(isset(Yii::$app->params['defaultLocation'])) {
+        if (isset(Yii::$app->params['defaultLocation'])) {
             $params['point'] = Yii::$app->params['defaultLocation'];
         }
 
@@ -95,17 +94,13 @@ class GraphHopper{
 
         curl_close($ch);
 
-        if ($response) {
-            return json_decode($response);
-        } else {
-            return "<pre>" . print_r($response, true) . "</pre>";
-        }
+        return $response;
 
     }
 
     public static function getLanLongFromGeocode($geocodeResponse)
     {
-        if (count($geocodeResponse->hits) > 0) {
+        if ( !empty($geocodeResponse) && count($geocodeResponse->hits) > 0) {
             return (string)$geocodeResponse->hits[0]->point->lat . "," . (string)$geocodeResponse->hits[0]->point->lng;
         }
         return '';
