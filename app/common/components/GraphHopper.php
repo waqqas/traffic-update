@@ -20,6 +20,9 @@ class GraphHopper{
      */
     public function getRoute($from, $to){
 
+        if(empty($from) || empty($to))
+            return;
+
         $query = http_build_query([
             'vehicle' => 'car',
             'locale' => 'en',
@@ -93,10 +96,18 @@ class GraphHopper{
         curl_close($ch);
 
         if ($response) {
-            return $response;
+            return json_decode($response);
         } else {
             return "<pre>" . print_r($response, true) . "</pre>";
         }
 
+    }
+
+    public static function getLanLongFromGeocode($geocodeResponse)
+    {
+        if (count($geocodeResponse->hits) > 0) {
+            return (string)$geocodeResponse->hits[0]->point->lat . "," . (string)$geocodeResponse->hits[0]->point->lng;
+        }
+        return '';
     }
 }
