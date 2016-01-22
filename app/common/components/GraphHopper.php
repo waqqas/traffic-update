@@ -23,7 +23,7 @@ class GraphHopper
     {
 
         if (empty($from) || empty($to))
-            return;
+            return null;
 
         $query = http_build_query([
             'vehicle' => 'car',

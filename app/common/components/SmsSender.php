@@ -40,4 +40,26 @@ class SmsSender
 
         Yii::error("response = ", print_r($response, true));
     }
+
+    public static function queueSend($msisdn, $sms){
+        $query = http_build_query([
+            'to' => $msisdn,
+            'text' => $sms,
+        ]);
+        $url = http_build_url(Yii::$app->params['serverName'],[
+            'path' => '/sms/mt',
+            'query' => $query,
+
+        ]);
+
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+        //TODO check response and update status
+        curl_exec($ch);
+
+        curl_close($ch);
+    }
 }

@@ -3,6 +3,7 @@
 namespace console\controllers;
 
 
+use common\components\SmsSender;
 use Yii;
 use yii\console\Controller;
 use common\models\Smsmo;
@@ -22,16 +23,26 @@ class SmsController extends Controller
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
 //                Yii::info(print_r($mo,true));
-                if (preg_match("/[tT][jJ][aA][mM] (.*),(.*)/", $mo->text, $output_array)) {
+                if (preg_match("/[tT][jJ][aA][mM] (.*)([<>])(.*)/", $mo->text, $output_array)) {
+                    // remove the all matching
                     array_shift($output_array);
 
                     $output_array = array_map('trim', $output_array);
 
                     Yii::info(print_r($output_array, true));
 
-                    if (count($output_array) == 2) {
-                        $fromCoord = json_decode(Yii::$app->graphHopper->geocode($output_array[0]));
-                        $toCoord = json_decode(Yii::$app->graphHopper->geocode($output_array[1]));
+                    if (count($output_array) == 3) {
+                        if($output_array[1] == ">"){
+                            $from = $output_array[0];
+                            $to = $output_array[2];
+                        }
+                        else{
+                            $from = $output_array[2];
+                            $to = $output_array[0];
+
+                        }
+                        $fromCoord = json_decode(Yii::$app->graphHopper->geocode($from));
+                        $toCoord = json_decode(Yii::$app->graphHopper->geocode($to));
 
                         $responseJson = Yii::$app->graphHopper->route(GraphHopper::getLanLongFromGeocode($fromCoord), GraphHopper::getLanLongFromGeocode($toCoord));
 
@@ -40,7 +51,7 @@ class SmsController extends Controller
 
                             $result = (new JSONPath($response))->find('$..text');
 
-//                            Yii::info(print_r($result, true));
+                            Yii::info(print_r($result, true));
 
                             // Compose SMS
 
@@ -69,39 +80,28 @@ class SmsController extends Controller
                             }, []);
 
                             $sms = implode(" > ", $landmarks);
+                            $sms .= " [www.roadez.com]";
 
                             Yii::info($sms);
 
                             // Send SMS
 
-                            $query = http_build_query([
-                               'to' => $mo->msisdn,
-                                'text' => $sms,
-                            ]);
-                            $url = http_build_url(Yii::$app->params['serverName'],[
-                                'path' => '/sms/mt',
-                                'query' => $query,
+                            // TODO check return value and update status
+                            SmsSender::queueSend($mo->msisdn, $sms);
 
-                            ]);
-
-                            $ch = curl_init();
-
-                            curl_setopt($ch, CURLOPT_URL, $url);
-                            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-                            //TODO check response and update status
-                            curl_exec($ch);
-
-                            curl_close($ch);
+                            $mo->status = 'processed';
                         }
-
-
-                        $mo->status = 'processed';
+                        else{
+                            SmsSender::queueSend($mo->msisdn, "I am sorry, source or destination address can be determined");
+                            $mo->status = 'processing_error';
+                        }
                     } else {
                         $mo->status = 'error';
+                        SmsSender::queueSend($mo->msisdn, "Format: TJAM source address > destination address");
                     }
                 } else {
-                    $mo->status = 'ignored';
+                    $mo->status = 'invalid';
+                    SmsSender::queueSend($mo->msisdn, "Format: TJAM source address > destination address");
                 }
                 $mo->save();
             }
