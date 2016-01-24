@@ -26,5 +26,8 @@ return [
             'class' => 'common\components\GraphHopper',
             'apiServerUrl' => 'https://graphhopper.com/api/1',
         ],
+        'formatter' => [
+            'class' => 'common\components\MapQuestFormatter',
+        ],
     ],
 ];

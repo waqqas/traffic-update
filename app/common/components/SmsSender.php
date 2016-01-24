@@ -63,11 +63,18 @@ class SmsSender
         $ch = curl_init();
 
         curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_NOBODY, true);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
+
         //TODO check response and update status
-        curl_exec($ch);
+        $output = curl_exec($ch);
+
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
         curl_close($ch);
+
+        return $httpCode == 200 ? true: false;
     }
 }

@@ -2,19 +2,25 @@
 
 namespace common\components;
 
+use common\models\CongestionPt;
 use Yii;
 
 use hightman\http\Client;
 use hightman\http\Request;
+use DateTime;
 
 class MapQuest
 {
 
-    public $apiServerUrl;
-    public $serviceName;
-    public $apiVersion;
+    public $apiServerUrl = 'http://www.mapquestapi.com';
+    public $serviceName = 'directions';
+    public $apiVersion = 'v2';
 
     public $apiKey;
+
+    public $unit = 'k';
+    public $ambiguities = 'ignore';
+    public $routeType = 'fastest';
 
     /*
 
@@ -35,6 +41,19 @@ class MapQuest
             'query' => $query,
         ]);
 
+        // get congestion points
+
+        $controlPts = array_map(function ($pt) {
+            return [
+                'lat' => $pt->lat,
+                'lng' => $pt->long,
+                'radius' => $pt->radius,
+                'weight' => $pt->weight,
+            ];
+        }, CongestionPt::findAll(['status' => 'enabled']));
+
+        $requestDate = new DateTime();
+
         $request = new Request($apiUrl);
         $request->setMethod('POST');
         $request->setJsonBody([
@@ -42,9 +61,25 @@ class MapQuest
                 $from, $to
             ],
             "options" => [
-                'unit' => 'k',
+                'unit' => $this->unit,
+                'routeType' => $this->routeType,
+                'enhancedNarrative' => true,
+                'locale' => 'en_US',
+                'mustAvoidLinkIds' => [],
+                'tryAvoidLinkIds' => [],
+                'sideOfStreetDisplay' => true,
+                'destinationManeuverDisplay' => false,
+                'drivingStyle' => 'normal',
+                'highwayEfficiency' => 10.0,
+                'timeType' => 2,
+                'dateType' => 0,
+                'date' => $requestDate->format('m/d/Y'),
+                'localTime' => $requestDate->format('H:i'),
+                'routeControlPointCollection' => $controlPts
             ]
         ]);
+
+//        Yii::info(print_r($request, true));
 
         $response = $http->exec($request);
 
