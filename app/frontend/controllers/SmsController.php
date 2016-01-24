@@ -5,7 +5,7 @@ use Yii;
 use yii\web\Controller;
 use common\models\Smsmo;
 use common\models\Smsmt;
-
+use yii\web\ServerErrorHttpException;
 
 
 class SmsController extends Controller
@@ -31,16 +31,21 @@ class SmsController extends Controller
         $text = Yii::$app->request->get('text', null);
         $to = Yii::$app->request->get('to', null);
 
-        $mt = new Smsmt();
-
         if( !is_null($to) && !is_null($text)){
+            $mt = new Smsmt();
+
+
             $mt->recipient = $to;
             $mt->status = "queued";
             $mt->text = $text;
 
-            $mt->save();
+            if($mt->save() ){
+                Yii::$app->consoleRunner->run('sms/mt '. $mt->id);
+            }
+            else{
+                throw new ServerErrorHttpException();
+            }
 
-            Yii::$app->consoleRunner->run('sms/mt '. $mt->id);
         }
     }
 

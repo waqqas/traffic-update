@@ -12,6 +12,8 @@ class SmsSender
 
     public $smsGatewayUrl;
 
+    public $lastMsgInfo = null;
+
     public function send($recipient, $text)
     {
         $parts = [
@@ -27,8 +29,6 @@ class SmsSender
 
         $url = http_build_url($this->smsGatewayUrl, $parts, HTTP_URL_JOIN_PATH | HTTP_URL_JOIN_QUERY | HTTP_URL_STRIP_FRAGMENT);
 
-//        Yii::error("url = " . $url);
-
         $ch = curl_init();
 
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -38,7 +38,15 @@ class SmsSender
 
         curl_close($ch);
 
-        Yii::error("response = ", print_r($response, true));
+        // parse xml
+        $xml = simplexml_load_string($response);
+        $json = json_encode($xml);
+        $array = json_decode($json, true);
+
+        $this->lastMsgInfo = $array['data']['acceptreport'];
+
+        // 0 means success
+        return $this->lastMsgInfo['statuscode']? false: true;
     }
 
     public static function queueSend($msisdn, $sms){

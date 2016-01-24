@@ -13,7 +13,7 @@ class MapquestController extends Controller{
         $from = Yii::$app->request->get('from', '');
         $to = Yii::$app->request->get('to', '');
 
-        return Yii::$app->mapQuest->getRoute($from, $to);
+        return Yii::$app->mapQuest->route($from, $to);
 
     }
 }

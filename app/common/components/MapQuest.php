@@ -21,7 +21,7 @@ class MapQuest
     http://www.mapquestapi.com/directions/v2/route?key=GJVt2ixNbY9BPoGYNDQItCAPQyE9G6L5&from=F-10,Islamabad&to=saddar,rawalpindi
 
      */
-    public function getRoute($from, $to)
+    public function route($from, $to)
     {
         $http = new Client();
 

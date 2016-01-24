@@ -14,6 +14,7 @@ use yii\behaviors\TimestampBehavior;
  * @property string $status
  * @property integer $created_at
  * @property integer $updated_at
+ * @property string $message_id
  */
 class Smsmt extends \yii\db\ActiveRecord
 {
@@ -35,6 +36,7 @@ class Smsmt extends \yii\db\ActiveRecord
             [['text'], 'string'],
 //            [['created_at', 'updated_at'], 'integer'],
             [['recipient'], 'string', 'max' => 32],
+            [['message_id'], 'string', 'max' => 40],
             [['status'], 'string', 'max' => 255]
         ];
     }
@@ -51,6 +53,7 @@ class Smsmt extends \yii\db\ActiveRecord
             'status' => 'Status',
             'created_at' => 'Created At',
             'updated_at' => 'Updated At',
+            'message_id' => 'Message ID',
         ];
     }
 

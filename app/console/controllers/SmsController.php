@@ -32,11 +32,10 @@ class SmsController extends Controller
                     Yii::info(print_r($output_array, true));
 
                     if (count($output_array) == 3) {
-                        if($output_array[1] == ">"){
+                        if ($output_array[1] == ">") {
                             $from = $output_array[0];
                             $to = $output_array[2];
-                        }
-                        else{
+                        } else {
                             $from = $output_array[2];
                             $to = $output_array[0];
 
@@ -90,8 +89,7 @@ class SmsController extends Controller
                             SmsSender::queueSend($mo->msisdn, $sms);
 
                             $mo->status = 'processed';
-                        }
-                        else{
+                        } else {
                             SmsSender::queueSend($mo->msisdn, "I am sorry, source or destination address can be determined");
                             $mo->status = 'processing_error';
                         }
@@ -109,19 +107,35 @@ class SmsController extends Controller
         return Controller::EXIT_CODE_NORMAL;
     }
 
-    public
-    function actionMt(array $ids)
+    public function actionMt(array $ids)
     {
         foreach ($ids as $id) {
             $mt = Smsmt::findOne(['id' => $id, 'status' => 'queued']);
             if ($mt) {
-                Yii::$app->sms->send($mt->recipient, $mt->text);
+                if (Yii::$app->sms->send($mt->recipient, $mt->text)) {
+                    $mt->message_id = Yii::$app->sms->lastMsgInfo['messageid'];
+                    $mt->status = "sent";
+                } else {
+                    $mt->status = 'error';
+                }
 
-                //TODO: check for status
-                $mt->status = "sent";
                 $mt->save();
             }
         }
         return Controller::EXIT_CODE_NORMAL;
+    }
+
+    public function actionSendAll($status = 'queued')
+    {
+        $mts = Smsmt::findAll(['status' => $status]);
+        foreach ($mts as $mt) {
+            if (Yii::$app->sms->send($mt->recipient, $mt->text)) {
+                $mt->message_id = Yii::$app->sms->lastMsgInfo['messageid'];
+                $mt->status = "sent";
+            } else {
+                $mt->status = 'error';
+            }
+            $mt->save();
+        }
     }
 }
