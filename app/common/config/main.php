@@ -26,6 +26,9 @@ return [
             'class' => 'common\components\GraphHopper',
             'apiServerUrl' => 'https://graphhopper.com/api/1',
         ],
+        'googleMaps' => [
+            'class' => 'common\components\GoogleMaps',
+        ],
         'formatter' => [
             'class' => 'common\components\MapQuestFormatter',
         ],

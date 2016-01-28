@@ -11,7 +11,7 @@ use yii\i18n\Formatter;
 class MapQuestFormatter extends Formatter
 {
 
-    public function asSMS($routeResponse)
+    public function asSMS($routeResponse, $prefix = '')
     {
         $routeInfo = json_decode($routeResponse, true);
 
@@ -52,7 +52,7 @@ class MapQuestFormatter extends Formatter
             return $legs;
         }, []);
 
-        $sms = implode(" > ", array_map(function ($leg) {
+        $sms = $prefix . implode(" > ", array_map(function ($leg) {
             return $leg['streets'][0] . '('. $this->asDecimal($leg['distance'], 1) . ')';
         }, $legs));
 //        $sms .= " [www.roadez.com]";

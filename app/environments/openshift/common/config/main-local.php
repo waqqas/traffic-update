@@ -35,5 +35,8 @@ return [
         'graphHopper' => [
             'apiKey' => '3090ca2b-a4b6-422b-be18-24f7a68422d9',
         ],
+        'googleMaps' => [
+            'apiKey' => 'AIzaSyAzaE9evW4DocDLJ105k9YsnTYJuZ2LI4s',
+        ],
     ],
 ];
