@@ -53,7 +53,7 @@ class MapQuestFormatter extends Formatter
         }, []);
 
         $sms = $prefix . implode(" > ", array_map(function ($leg) {
-            return $leg['streets'][0] . '('. $this->asDecimal($leg['distance'], 1) . ')';
+            return $leg['streets'][0] . '('. $this->asDecimal($leg['distance'], 1) . 'km)';
         }, $legs));
 //        $sms .= " [www.roadez.com]";
 
