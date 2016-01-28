@@ -19,9 +19,7 @@ class SmsController extends Controller
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
 //                Yii::info(print_r($mo,true));
-                if (preg_match("/" . Yii::$app->params['smsKeyword'] . " (ROUTE) (.*)([<>])(.*)/i", $mo->text, $output_array)) {
-
-//                    Yii::info(print_r($output_array, true));
+                if (preg_match("/" . Yii::$app->params['smsKeyword'] . " (ROUTE)(.*)/i", $mo->text, $output_array)) {
 
                     // remove the all matching
                     array_shift($output_array);
@@ -29,53 +27,64 @@ class SmsController extends Controller
                     $output_array = array_map('trim', $output_array);
                     $command = strtolower(array_shift($output_array));
 
-
                     switch ($command) {
                         case 'route':
-                            // three parameters to route command
-                            if (count($output_array) == 3) {
-                                if ($output_array[1] == ">") {
-                                    $from = $output_array[0];
-                                    $to = $output_array[2];
-                                } else {
-                                    $from = $output_array[2];
-                                    $to = $output_array[0];
 
-                                }
+                            // route command and three parameters
+                            if(preg_match('/(.*)([<>])(.*)/i', $output_array[0], $commandParams)) {
+                                // remove the all matching
+                                array_shift($commandParams);
 
-                                $fromAddresses = Yii::$app->googleMaps->geocode($from);
-//                                Yii::info(('froms: ' . print_r($fromAddresses, true)));
-
-                                /** @var \Geocoder\Model\AddressCollection $toAddresses */
-                                $toAddresses = Yii::$app->googleMaps->geocode($to);
-//                                Yii::info(('tos: ' . print_r($toAddresses, true)));
-
-                                $from = $fromAddresses[0]->geometry->location->lat . "," . $fromAddresses[0]->geometry->location->lng;
-                                $to = $toAddresses[0]->geometry->location->lat . "," . $toAddresses[0]->geometry->location->lng;
-
-                                Yii::info('from =' . $from);
-                                Yii::info('to =' . $to);
-
-                                $routeResponse = Yii::$app->mapQuest->route($from, $to);
-
-                                if ($routeResponse) {
-
-                                    $prefix = '['. $fromAddresses[0]->formatted_address . ' > ' . $toAddresses[0]->formatted_address .'] ';
-                                    $sms = Yii::$app->formatter->asSMS($routeResponse, $prefix);
-
-                                    Yii::info($sms);
-
-                                    // Send SMS
-
-                                    if (SmsSender::queueSend($mo->msisdn, $sms)) {
-                                        $mo->status = 'processed';
+                                // three parameters to route command
+                                if (count($commandParams) == 3) {
+                                    if ($commandParams[1] == ">") {
+                                        $from = $commandParams[0];
+                                        $to = $commandParams[2];
                                     } else {
-                                        $mo->status = 'queue_error';
+                                        $from = $commandParams[2];
+                                        $to = $commandParams[0];
+
                                     }
+
+                                    $fromAddresses = Yii::$app->googleMaps->geocode($from);
+
+                                    /** @var \Geocoder\Model\AddressCollection $toAddresses */
+                                    $toAddresses = Yii::$app->googleMaps->geocode($to);
+
+                                    $from = $fromAddresses[0]->geometry->location->lat . "," . $fromAddresses[0]->geometry->location->lng;
+                                    $to = $toAddresses[0]->geometry->location->lat . "," . $toAddresses[0]->geometry->location->lng;
+
+                                    Yii::info('from lat,lng =' . $from);
+                                    Yii::info('to lat, lng =' . $to);
+
+                                    $routeResponse = Yii::$app->mapQuest->route($from, $to);
+
+                                    if ($routeResponse) {
+
+                                        $prefix = '[' . $fromAddresses[0]->formatted_address . ' > ' . $toAddresses[0]->formatted_address . '] ';
+                                        $sms = Yii::$app->formatter->asSMS($routeResponse, $prefix);
+
+                                        Yii::info($sms);
+
+                                        // Send SMS
+
+                                        if (SmsSender::queueSend($mo->msisdn, $sms)) {
+                                            $mo->status = 'processed';
+                                        } else {
+                                            $mo->status = 'queue_error';
+                                        }
+                                    }
+                                    else{
+                                        //TODO: send sms that route could not be found
+                                    }
+
+
+                                } else {
+                                    // TODO send route format SMS
+                                    $mo->status = 'invalid';
                                 }
-
-
-                            } else {
+                            }
+                            else{
                                 // TODO send route format SMS
                                 $mo->status = 'invalid';
                             }
