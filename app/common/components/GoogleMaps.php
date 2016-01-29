@@ -53,4 +53,37 @@ class GoogleMaps extends Component
 
     }
 
+    public function route($from, $to)
+    {
+
+        $query = http_build_query([
+            'key' => $this->apiKey,
+            'origin' => $from,
+            'destination' => $to,
+            'region' => $this->region,
+            'language' => $this->language,
+            'mode' => 'driving',
+            'units' => 'metric',
+            'departure_time' => 'now',
+            'traffic_model' => 'best_guess',
+        ]);
+
+        $url = http_build_url($this->apiUrl . '/directions/json', [
+            'query' => $query,
+        ]);
+
+        Yii::info('google api url = ' . $url);
+
+        /** @var \Httpful\Response $response */
+        $response = Request::get($url)->send();
+
+        if ($response->body->status === 'OK' && !empty($response->body->routes)) {
+            return $response->body->routes;
+        } else {
+            //TODO generate exception
+            return null;
+        }
+
+    }
+
 }
