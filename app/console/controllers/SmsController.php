@@ -28,6 +28,19 @@ class SmsController extends Controller
                     $command = strtolower(array_shift($output_array));
 
                     switch ($command) {
+                        case 'cp':
+                            // congestion-points command has one optional parameter
+                            if(preg_match('/(.*)/i', $output_array[0], $commandParams)) {
+                                // remove the all matching
+                                array_shift($commandParams);
+
+                                // one optional parameter to route command
+                                if (count($commandParams) == 1) {
+                                }
+
+                            }
+
+                            break;
                         case 'route':
 
                             // route command and three parameters
