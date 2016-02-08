@@ -4,10 +4,12 @@ namespace console\controllers;
 
 
 use common\components\SmsSender;
+use common\models\Incident;
 use Yii;
 use yii\console\Controller;
 use common\models\Smsmo;
 use common\models\Smsmt;
+use yii\data\ActiveDataProvider;
 
 class SmsController extends Controller
 {
@@ -19,23 +21,50 @@ class SmsController extends Controller
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
 //                Yii::info(print_r($mo,true));
-                if (preg_match("/" . Yii::$app->params['smsKeyword'] . " (ROUTE)(.*)/i", $mo->text, $output_array)) {
+                if (preg_match("/" . Yii::$app->params['smsKeyword'] . " ([route|i])(.*)/i", $mo->text, $output_array)) {
 
                     // remove the all matching
                     array_shift($output_array);
 
+                    // remove leading and trailing spaces
                     $output_array = array_map('trim', $output_array);
+
                     $command = strtolower(array_shift($output_array));
 
+
                     switch ($command) {
-                        case 'cp':
-                            // congestion-points command has one optional parameter
+                        case 'i':
+
+//                            Yii::info('incident command');
+
+                            //command has one optional parameter
                             if(preg_match('/(.*)/i', $output_array[0], $commandParams)) {
                                 // remove the all matching
                                 array_shift($commandParams);
 
+                                $commandParams = array_map('trim', $commandParams);
+
+                                $location = Yii::$app->params['defaultLocation'];
+
                                 // one optional parameter to route command
                                 if (count($commandParams) == 1) {
+                                    $location = $commandParams[0];
+                                }
+
+                                $currentTime = time();
+
+                                $query = Incident::find()->where([
+                                    'enabled' => 1,
+                                ])->andWhere([
+                                    'and' ,[ '<=', 'startTime' , $currentTime ], [ '>', 'endTime' , $currentTime ],
+                                ]);
+
+                                $dataProvider = new ActiveDataProvider(['query' => $query]);
+
+                                $incidents = $dataProvider->getModels();
+
+                                foreach($incidents as $incident){
+                                    Yii::info("incident: ". print_r($incident, true));
                                 }
 
                             }
@@ -61,7 +90,7 @@ class SmsController extends Controller
 
                                     $fromAddresses = Yii::$app->googleMaps->geocode($from);
 
-                                    /** @var \Geocoder\Model\AddressCollection $toAddresses */
+                                    /** @var \Geocoder\1Model\AddressCollection $toAddresses */
                                     $toAddresses = Yii::$app->googleMaps->geocode($to);
 
                                     $from = $fromAddresses[0]->geometry->location->lat . "," . $fromAddresses[0]->geometry->location->lng;
