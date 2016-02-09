@@ -1,1 +1,1 @@
-app/frontend/web/
+app/backend/web/
