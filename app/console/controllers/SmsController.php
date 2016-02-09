@@ -21,7 +21,11 @@ class SmsController extends Controller
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
 //                Yii::info(print_r($mo,true));
-                if (preg_match("/" . Yii::$app->params['smsKeyword'] . " ([route|i])(.*)/i", $mo->text, $output_array)) {
+                $regex = "/" . Yii::$app->params['smsKeyword'] . "(\\w*)([route|i]*)(.*)/i";
+
+//                Yii::info('regex: '. $regex);
+
+                if (preg_match($regex, $mo->text, $output_array)) {
 
                     // remove the all matching
                     array_shift($output_array);
@@ -31,11 +35,13 @@ class SmsController extends Controller
 
                     $command = strtolower(array_shift($output_array));
 
+//                    Yii::info('command: ' . $command);
 
                     switch ($command) {
                         case 'i':
+                        case '':
 
-//                            Yii::info('incident command');
+                            Yii::info('incident command');
 
                             //command has one optional parameter
                             if(preg_match('/(.*)/i', $output_array[0], $commandParams)) {
@@ -63,8 +69,16 @@ class SmsController extends Controller
 
                                 $incidents = $dataProvider->getModels();
 
-                                foreach($incidents as $incident){
-                                    Yii::info("incident: ". print_r($incident, true));
+                                $sms = Yii::$app->formatter->asSMS($incidents);
+
+                                Yii::info($sms);
+
+                                // Send SMS
+
+                                if (SmsSender::queueSend($mo->msisdn, $sms)) {
+                                    $mo->status = 'processed';
+                                } else {
+                                    $mo->status = 'queue_error';
                                 }
 
                             }
