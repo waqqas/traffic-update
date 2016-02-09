@@ -13,6 +13,7 @@ use Yii;
  * @property string $location
  * @property integer $type
  * @property string $description
+ * @property integer $severity
  * @property integer $eventCode
  * @property integer $startTime
  * @property integer $endTime
@@ -40,7 +41,7 @@ class Incident extends \yii\db\ActiveRecord
         return [
             [['lat', 'lng', 'created_at', 'updated_at'], 'required'],
             [['lat', 'lng'], 'number'],
-            [['type', 'eventCode', 'startTime', 'endTime', 'delayFromTypical', 'delayFromFreeFlow', 'created_at', 'updated_at'], 'integer'],
+            [['type', 'severity', 'eventCode', 'startTime', 'endTime', 'delayFromTypical', 'delayFromFreeFlow', 'created_at', 'updated_at'], 'integer'],
             [['enabled'], 'boolean'],
             [['location'], 'string', 'max' => 200],
             [['description'], 'string', 'max' => 500]
@@ -59,6 +60,7 @@ class Incident extends \yii\db\ActiveRecord
             'location' => 'Location',
             'type' => 'Type',
             'description' => 'Description',
+            'severity' => 'Severity',
             'eventCode' => 'Event Code',
             'startTime' => 'Start Time',
             'endTime' => 'End Time',

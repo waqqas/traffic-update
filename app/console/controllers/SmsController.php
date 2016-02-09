@@ -20,8 +20,8 @@ class SmsController extends Controller
             /** @var \common\models\Smsmo $mo */
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
-//                Yii::info(print_r($mo,true));
-                $regex = "/" . Yii::$app->params['smsKeyword'] . "(\\w*)([route|i]*)(.*)/i";
+//                Yii::info(print_r($mo->text,true));
+                $regex = "/" . Yii::$app->params['smsKeyword'] . "([route|i|\\s]*)(.*)/i";
 
 //                Yii::info('regex: '. $regex);
 
@@ -59,19 +59,26 @@ class SmsController extends Controller
 
                                 $currentTime = time();
 
-                                $query = Incident::find()->where([
+                                $query = Incident::find()
+                                    ->where([
                                     'enabled' => 1,
-                                ])->andWhere([
+                                ])
+                                ->andWhere([
                                     'and' ,[ '<=', 'startTime' , $currentTime ], [ '>', 'endTime' , $currentTime ],
-                                ]);
+                                ])->orderBy(['severity' => SORT_DESC]);
 
-                                $dataProvider = new ActiveDataProvider(['query' => $query]);
+                                $dataProvider = new ActiveDataProvider([
+                                    'query' => $query,
+                                    'pagination' => [
+                                        'pageSize' => 5,
+                                    ]
+                                ]);
 
                                 $incidents = $dataProvider->getModels();
 
                                 $sms = Yii::$app->formatter->asSMS($incidents);
 
-                                Yii::info($sms);
+                                Yii::info("sms:" . $sms);
 
                                 // Send SMS
 
@@ -87,20 +94,15 @@ class SmsController extends Controller
                         case 'route':
 
                             // route command and three parameters
-                            if(preg_match('/(.*)([<>])(.*)/i', $output_array[0], $commandParams)) {
+                            if(preg_match('/(.*)( to )(.*)/i', $output_array[0], $commandParams)) {
                                 // remove the all matching
                                 array_shift($commandParams);
 
                                 // three parameters to route command
                                 if (count($commandParams) == 3) {
-                                    if ($commandParams[1] == ">") {
-                                        $from = $commandParams[0];
-                                        $to = $commandParams[2];
-                                    } else {
-                                        $from = $commandParams[2];
-                                        $to = $commandParams[0];
 
-                                    }
+                                    $from = $commandParams[0];
+                                    $to = $commandParams[2];
 
                                     $fromAddresses = Yii::$app->googleMaps->geocode($from);
 
@@ -117,7 +119,7 @@ class SmsController extends Controller
 
                                     if ($routeResponse) {
 
-                                        $prefix = '[' . $fromAddresses[0]->formatted_address . ' > ' . $toAddresses[0]->formatted_address . '] ';
+                                        $prefix = '[' . $fromAddresses[0]->formatted_address . ' to ' . $toAddresses[0]->formatted_address . '] ';
                                         $sms = Yii::$app->formatter->asSMS($routeResponse, $prefix);
 
                                         Yii::info($sms);

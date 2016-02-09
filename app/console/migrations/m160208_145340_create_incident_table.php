@@ -20,6 +20,7 @@ class m160208_145340_create_incident_table extends Migration
             'location' => $this->string(200),
             'type' => $this->integer(),
             'description' => $this->string(500),
+            'severity' => $this->integer(),
             'eventCode' => $this->integer(),
             'startTime' => $this->integer(),
             'endTime' => $this->integer(),

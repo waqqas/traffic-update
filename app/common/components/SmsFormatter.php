@@ -15,17 +15,83 @@ class SmsFormatter extends Formatter
     {
         if (is_string($info)) {
             return $this->asRouteSMS($info, $prefix);
-        }
-        elseif( is_array($info)) {
+        } elseif (is_array($info)) {
             return $this->asIncidentsSMS($info, $prefix);
         }
     }
 
     public function asIncidentsSMS($incidents, $prefix)
     {
+        $sms = $prefix;
+
+        /** @var \common\models\Incident $incident */
         foreach ($incidents as $incident) {
-            Yii::info("incident: ". print_r($incident, true));
+//            Yii::info("incident: ". print_r($incident, true));
+
+            $incLine = $incident->id;
+            $incLine .= ')';
+
+//            if ($incident->severity) {
+//                switch ($incident->severity) {
+//                    case 1:
+//                        $incLine .= "Mild";
+//                        break;
+//                    case 2:
+//                        $incLine .= "Moderate";
+//                        break;
+//                    case 3:
+//                        $incLine .= "High";
+//                        break;
+//                    case 4:
+//                        $incLine .= "Severe";
+//                        break;
+//                }
+//                $incLine .= ' ';
+//            }
+
+            switch ($incident->type) {
+                case 1: // Construction
+                    $incLine .= "Construction";
+                    break;
+                case 2: // Event
+                    $incLine .= "Event";
+                    break;
+                case 3: // Congestion/Flow
+                    $incLine .= "Congestion";
+                    break;
+                case 4: // Incident/accident
+                    $incLine .= "Accident";
+                    break;
+                default:
+                    $incLine .= "Unknown event";
+
+            }
+
+            $incLine .= ' at ';
+            $incLine .= ucfirst($incident->location);
+            $incLine .= ".";
+
+            if ($incident->delayFromFreeFlow) {
+//                $delay = new \DateInterval("P" . $incident->delayFromFreeFlow ."M");
+//
+//                $format = '';
+//
+//                if($delay->h != 0)
+//                    $format .= '%hh ';
+//                if($delay->m != 0);
+//                    $format .= '%im ';
+//                if($delay->s != 0)
+//                    $format .= '%ss ';
+
+                $incLine .= ' Delay: ' . $incident->delayFromFreeFlow . ' m.';
+            }
+
+
+            //
+            $sms .= $incLine . PHP_EOL;
         }
+
+        return $sms;
     }
 
     public function asRouteSMS($info, $prefix = '')
@@ -71,8 +137,8 @@ class SmsFormatter extends Formatter
         }, []);
 
         $sms = $prefix . implode(" > ", array_map(function ($leg) {
-            return $leg['streets'][0] . '('. $this->asDecimal($leg['distance'], 1) . 'km)';
-        }, $legs));
+                return $leg['streets'][0] . '(' . $this->asDecimal($leg['distance'], 1) . 'km)';
+            }, $legs));
 //        $sms .= " [www.roadez.com]";
 
         return $sms;
