@@ -1,4 +1,4 @@
 <?php
 return [
-    'serverName' => 'http://trafficupdate.roadez.com',
+    'serverName' => 'http://trafficupdate.roadez.com/frontend/web',
 ];

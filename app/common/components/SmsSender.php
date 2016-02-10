@@ -54,8 +54,8 @@ class SmsSender
             'to' => $msisdn,
             'text' => $sms,
         ]);
-        $url = http_build_url(Yii::$app->params['serverName'],[
-            'path' => '/sms/mt',
+
+        $url = http_build_url(Yii::$app->params['serverName'] . '/sms/mt',[
             'query' => $query,
 
         ]);

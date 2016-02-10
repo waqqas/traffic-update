@@ -82,7 +82,7 @@ class SmsController extends Controller
 
                                 // Send SMS
 
-                                if (SmsSender::queueSend($mo->msisdn, $sms)) {
+                                if ( !empty($sms) && SmsSender::queueSend($mo->msisdn, $sms)) {
                                     $mo->status = 'processed';
                                 } else {
                                     $mo->status = 'queue_error';
