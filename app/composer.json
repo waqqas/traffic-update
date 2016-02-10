@@ -23,7 +23,8 @@
         "vova07/yii2-console-runner-extension": "*",
         "hightman/httpclient": "*",
         "flow/jsonpath": "^0.3.1",
-        "nategood/httpful": "^0.2.20"
+        "nategood/httpful": "^0.2.20",
+        "omnilight/yii2-scheduling": "^1.0"
     },
     "require-dev": {
         "yiisoft/yii2-codeception": "*",

@@ -32,5 +32,8 @@ return [
         'formatter' => [
             'class' => 'common\components\SmsFormatter',
         ],
+        'schedule' => [
+            'class' => 'omnilight\scheduling\Schedule',
+        ],
     ],
 ];
