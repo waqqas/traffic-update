@@ -4,10 +4,12 @@ namespace console\controllers;
 
 
 use common\components\SmsSender;
+use common\models\Incident;
 use Yii;
 use yii\console\Controller;
 use common\models\Smsmo;
 use common\models\Smsmt;
+use yii\data\ActiveDataProvider;
 
 class SmsController extends Controller
 {
@@ -18,37 +20,93 @@ class SmsController extends Controller
             /** @var \common\models\Smsmo $mo */
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
-//                Yii::info(print_r($mo,true));
-                if (preg_match("/" . Yii::$app->params['smsKeyword'] . " (ROUTE)(.*)/i", $mo->text, $output_array)) {
+//                Yii::info(print_r($mo->text,true));
+                $regex = "/" . Yii::$app->params['smsKeyword'] . "([route|i|\\s]*)(.*)/i";
+
+//                Yii::info('regex: '. $regex);
+
+                if (preg_match($regex, $mo->text, $output_array)) {
 
                     // remove the all matching
                     array_shift($output_array);
 
+                    // remove leading and trailing spaces
                     $output_array = array_map('trim', $output_array);
+
                     $command = strtolower(array_shift($output_array));
 
+//                    Yii::info('command: ' . $command);
+
                     switch ($command) {
+                        case 'i':
+                        case '':
+
+                            Yii::info('incident command');
+
+                            //command has one optional parameter
+                            if(preg_match('/(.*)/i', $output_array[0], $commandParams)) {
+                                // remove the all matching
+                                array_shift($commandParams);
+
+                                $commandParams = array_map('trim', $commandParams);
+
+                                $location = Yii::$app->params['defaultLocation'];
+
+                                // one optional parameter to route command
+                                if (count($commandParams) == 1) {
+                                    $location = $commandParams[0];
+                                }
+
+                                $currentTime = time();
+
+                                $query = Incident::find()
+                                    ->where([
+                                    'enabled' => 1,
+                                ])
+                                ->andWhere([
+                                    'and' ,[ '<=', 'startTime' , $currentTime ], [ '>', 'endTime' , $currentTime ],
+                                ])->orderBy(['severity' => SORT_DESC]);
+
+                                $dataProvider = new ActiveDataProvider([
+                                    'query' => $query,
+                                    'pagination' => [
+                                        'pageSize' => 5,
+                                    ]
+                                ]);
+
+                                $incidents = $dataProvider->getModels();
+
+                                $sms = Yii::$app->formatter->asSMS($incidents);
+
+                                Yii::info("sms:" . $sms);
+
+                                // Send SMS
+
+                                if (SmsSender::queueSend($mo->msisdn, $sms)) {
+                                    $mo->status = 'processed';
+                                } else {
+                                    $mo->status = 'queue_error';
+                                }
+
+                            }
+
+                            break;
                         case 'route':
 
                             // route command and three parameters
-                            if(preg_match('/(.*)([<>])(.*)/i', $output_array[0], $commandParams)) {
+                            if(preg_match('/(.*)( to )(.*)/i', $output_array[0], $commandParams)) {
                                 // remove the all matching
                                 array_shift($commandParams);
 
                                 // three parameters to route command
                                 if (count($commandParams) == 3) {
-                                    if ($commandParams[1] == ">") {
-                                        $from = $commandParams[0];
-                                        $to = $commandParams[2];
-                                    } else {
-                                        $from = $commandParams[2];
-                                        $to = $commandParams[0];
 
-                                    }
+                                    $from = $commandParams[0];
+                                    $to = $commandParams[2];
 
                                     $fromAddresses = Yii::$app->googleMaps->geocode($from);
 
-                                    /** @var \Geocoder\Model\AddressCollection $toAddresses */
+                                    /** @var \Geocoder\1Model\AddressCollection $toAddresses */
                                     $toAddresses = Yii::$app->googleMaps->geocode($to);
 
                                     $from = $fromAddresses[0]->geometry->location->lat . "," . $fromAddresses[0]->geometry->location->lng;
@@ -61,7 +119,7 @@ class SmsController extends Controller
 
                                     if ($routeResponse) {
 
-                                        $prefix = '[' . $fromAddresses[0]->formatted_address . ' > ' . $toAddresses[0]->formatted_address . '] ';
+                                        $prefix = '[' . $fromAddresses[0]->formatted_address . ' to ' . $toAddresses[0]->formatted_address . '] ';
                                         $sms = Yii::$app->formatter->asSMS($routeResponse, $prefix);
 
                                         Yii::info($sms);

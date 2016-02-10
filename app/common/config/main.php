@@ -30,7 +30,7 @@ return [
             'class' => 'common\components\GoogleMaps',
         ],
         'formatter' => [
-            'class' => 'common\components\MapQuestFormatter',
+            'class' => 'common\components\SmsFormatter',
         ],
     ],
 ];
