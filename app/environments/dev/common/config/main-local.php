@@ -3,7 +3,9 @@ return [
     'components' => [
         'db' => [
             'class' => 'yii\db\Connection',
-            'dsn' => 'sqlite:' .  __DIR__ . '/../../traffic-update.db',
+            'dsn' => "mysql:host=127.0.01;port=3306;dbname=trafficupdate",
+            'username' => 'trafficupdate',
+            'password' => 'trafficupdate',
             'charset' => 'utf8',
         ],
         'mailer' => [
@@ -29,5 +31,8 @@ return [
         'googleMaps' => [
             'apiKey' => 'AIzaSyAfqjLZ0Dwhb8_U82T2Yji3BP-O5E54kHI',
         ],
+        'translate' => [
+            'key' => 'AIzaSyAfqjLZ0Dwhb8_U82T2Yji3BP-O5E54kHI',
+        ]
     ],
 ];

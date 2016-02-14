@@ -20,11 +20,12 @@
         "yiisoft/yii2-swiftmailer": "*",
         "jakeasmith/http_build_url": "^1.0",
         "giggsey/libphonenumber-for-php": "^7.2",
-        "vova07/yii2-console-runner-extension": "*",
         "hightman/httpclient": "*",
         "flow/jsonpath": "^0.3.1",
         "nategood/httpful": "^0.2.20",
-        "omnilight/yii2-scheduling": "^1.0"
+        "omnilight/yii2-scheduling": "^1.0",
+        "lajax/yii2-translate-manager": "^1.5",
+        "richweber/yii2-google-translate-api": "^1.0"
     },
     "require-dev": {
         "yiisoft/yii2-codeception": "*",

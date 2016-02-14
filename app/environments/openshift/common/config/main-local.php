@@ -1,7 +1,7 @@
 <?php
 
 $mysqlHost = getenv('OPENSHIFT_MYSQL_DB_HOST');
-$mysqlPort = getenv('$OPENSHIFT_MYSQL_DB_PORT');
+$mysqlPort = getenv('OPENSHIFT_MYSQL_DB_PORT');
 
 $dsn = "mysql:host=" . $mysqlHost . ";port=" . $mysqlPort .";dbname=trafficupdate";
 
@@ -38,5 +38,8 @@ return [
         'googleMaps' => [
             'apiKey' => 'AIzaSyAzaE9evW4DocDLJ105k9YsnTYJuZ2LI4s',
         ],
+        'translate' => [
+            'key' => 'AIzaSyAzaE9evW4DocDLJ105k9YsnTYJuZ2LI4s',
+        ]
     ],
 ];

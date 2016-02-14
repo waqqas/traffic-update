@@ -21,7 +21,7 @@ class SmsController extends Controller
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
 //                Yii::info(print_r($mo->text,true));
-                $regex = "/" . Yii::$app->params['smsKeyword'] . "([route|i|\\s]*)(.*)/i";
+                $regex = "/" . Yii::$app->params['smsKeyword'] . "([route|i|urdu|\\s]*)(.*)/i";
 
 //                Yii::info('regex: '. $regex);
 
@@ -35,9 +35,14 @@ class SmsController extends Controller
 
                     $command = strtolower(array_shift($output_array));
 
-//                    Yii::info('command: ' . $command);
+                    Yii::info('command: ' . $command);
 
                     switch ($command) {
+                        case 'urdu':
+//                            Yii::$app->language = 'ur-PK';
+//                            Yii::info(Yii::t('sms', "Pakistan"));
+
+                            break;
                         case 'i':
                         case '':
 

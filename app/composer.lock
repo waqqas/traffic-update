@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "9bf81173d8e5f854a75a9ade411bc60d",
-    "content-hash": "cfa8f2fd8c040825569a205b771a356b",
+    "hash": "e2837972649424cca3f95ef9f8da0ed6",
+    "content-hash": "c3ba33f5639daf0a59b6f4b81290f729",
     "packages": [
         {
             "name": "bower-asset/bootstrap",
@@ -99,6 +99,31 @@
                 "jquery",
                 "library"
             ]
+        },
+        {
+            "name": "bower-asset/jquery-ui",
+            "version": "1.11.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/components/jqueryui.git",
+                "reference": "c34f8dbf3ba57b3784b93f26119f436c0e8288e1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/components/jqueryui/zipball/c34f8dbf3ba57b3784b93f26119f436c0e8288e1",
+                "reference": "c34f8dbf3ba57b3784b93f26119f436c0e8288e1",
+                "shasum": ""
+            },
+            "require": {
+                "bower-asset/jquery": ">=1.6"
+            },
+            "type": "bower-asset-library",
+            "extra": {
+                "bower-asset-main": [
+                    "jquery-ui.js"
+                ],
+                "bower-asset-ignore": []
+            }
         },
         {
             "name": "bower-asset/jquery.inputmask",
@@ -357,16 +382,16 @@
         },
         {
             "name": "giggsey/libphonenumber-for-php",
-            "version": "7.2.4",
+            "version": "7.2.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/giggsey/libphonenumber-for-php.git",
-                "reference": "0c9608d59541e8360794f42dc3e18d64e031a39f"
+                "reference": "f002be142b81e862f583a0f90cb6e6319bb9fee6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/giggsey/libphonenumber-for-php/zipball/0c9608d59541e8360794f42dc3e18d64e031a39f",
-                "reference": "0c9608d59541e8360794f42dc3e18d64e031a39f",
+                "url": "https://api.github.com/repos/giggsey/libphonenumber-for-php/zipball/f002be142b81e862f583a0f90cb6e6319bb9fee6",
+                "reference": "f002be142b81e862f583a0f90cb6e6319bb9fee6",
                 "shasum": ""
             },
             "require": {
@@ -416,7 +441,7 @@
                 "phonenumber",
                 "validation"
             ],
-            "time": "2016-01-28 10:46:45"
+            "time": "2016-02-11 10:16:02"
         },
         {
             "name": "hightman/httpclient",
@@ -501,6 +526,51 @@
             ],
             "description": "Provides functionality for http_build_url() to environments without pecl_http.",
             "time": "2015-05-06 12:27:20"
+        },
+        {
+            "name": "lajax/yii2-translate-manager",
+            "version": "1.5.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/lajax/yii2-translate-manager.git",
+                "reference": "0c3ab55b8fe8568c61465a5d71197c11387ee8e9"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/lajax/yii2-translate-manager/zipball/0c3ab55b8fe8568c61465a5d71197c11387ee8e9",
+                "reference": "0c3ab55b8fe8568c61465a5d71197c11387ee8e9",
+                "shasum": ""
+            },
+            "require": {
+                "yiisoft/yii2": "*",
+                "yiisoft/yii2-bootstrap": "*",
+                "yiisoft/yii2-jui": "*"
+            },
+            "type": "yii2-extension",
+            "autoload": {
+                "psr-4": {
+                    "lajax\\translatemanager\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Lajos Molnar",
+                    "email": "lajax.m@gmail.com"
+                }
+            ],
+            "description": "Online Translate",
+            "keywords": [
+                "extension",
+                "language",
+                "module",
+                "translate",
+                "yii2"
+            ],
+            "time": "2015-11-16 18:34:12"
         },
         {
             "name": "mtdowling/cron-expression",
@@ -644,6 +714,48 @@
             "time": "2015-09-27 18:46:32"
         },
         {
+            "name": "richweber/yii2-google-translate-api",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/RichWeber/yii2-google-translate-api.git",
+                "reference": "8c7e47bd8c3309f6dcb4869141e2c30a3a231537"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/RichWeber/yii2-google-translate-api/zipball/8c7e47bd8c3309f6dcb4869141e2c30a3a231537",
+                "reference": "8c7e47bd8c3309f6dcb4869141e2c30a3a231537",
+                "shasum": ""
+            },
+            "require": {
+                "yiisoft/yii2": "*"
+            },
+            "type": "yii2-extension",
+            "autoload": {
+                "psr-4": {
+                    "richweber\\google\\translate\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "RichWeber",
+                    "email": "rbagatyi@gmail.com"
+                }
+            ],
+            "description": "Yii2 extension to Google Translate API",
+            "keywords": [
+                "api",
+                "google",
+                "translate",
+                "yii2"
+            ],
+            "time": "2015-02-18 22:53:39"
+        },
+        {
             "name": "swiftmailer/swiftmailer",
             "version": "v5.4.1",
             "source": {
@@ -745,51 +857,6 @@
             "description": "Symfony Process Component",
             "homepage": "https://symfony.com",
             "time": "2015-06-30 16:10:16"
-        },
-        {
-            "name": "vova07/yii2-console-runner-extension",
-            "version": "0.1.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/vova07/yii2-console-runner-extension.git",
-                "reference": "b67af1ff0a5de74ae06aece83d0273a92d9f657d"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/vova07/yii2-console-runner-extension/zipball/b67af1ff0a5de74ae06aece83d0273a92d9f657d",
-                "reference": "b67af1ff0a5de74ae06aece83d0273a92d9f657d",
-                "shasum": ""
-            },
-            "require": {
-                "yiisoft/yii2": "*"
-            },
-            "type": "yii2-extension",
-            "autoload": {
-                "psr-4": {
-                    "vova07\\console\\": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Crudu Vasile",
-                    "email": "bazillio07@yandex.ru"
-                }
-            ],
-            "description": "An extension for running console commands on background in Yii framework.",
-            "homepage": "https://github.com/vova07/yii2-console-runner-extension",
-            "keywords": [
-                "background",
-                "commands",
-                "console",
-                "runner",
-                "yii 2",
-                "yii2"
-            ],
-            "time": "2014-05-27 10:35:28"
         },
         {
             "name": "yiisoft/yii2",
@@ -931,20 +998,20 @@
         },
         {
             "name": "yiisoft/yii2-composer",
-            "version": "2.0.3",
+            "version": "2.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/yiisoft/yii2-composer.git",
-                "reference": "ca8d23707ae47d20b0454e4b135c156f6da6d7be"
+                "reference": "7452fd908a5023b8bb5ea1b123a174ca080de464"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/yiisoft/yii2-composer/zipball/ca8d23707ae47d20b0454e4b135c156f6da6d7be",
-                "reference": "ca8d23707ae47d20b0454e4b135c156f6da6d7be",
+                "url": "https://api.github.com/repos/yiisoft/yii2-composer/zipball/7452fd908a5023b8bb5ea1b123a174ca080de464",
+                "reference": "7452fd908a5023b8bb5ea1b123a174ca080de464",
                 "shasum": ""
             },
             "require": {
-                "composer-plugin-api": "1.0.0"
+                "composer-plugin-api": "^1.0"
             },
             "type": "composer-plugin",
             "extra": {
@@ -974,7 +1041,57 @@
                 "extension installer",
                 "yii2"
             ],
-            "time": "2015-03-01 06:22:44"
+            "time": "2016-02-06 00:49:24"
+        },
+        {
+            "name": "yiisoft/yii2-jui",
+            "version": "2.0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/yiisoft/yii2-jui.git",
+                "reference": "ce16f29cca654702c2ee500ccad9657a2d2e6a09"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/yiisoft/yii2-jui/zipball/ce16f29cca654702c2ee500ccad9657a2d2e6a09",
+                "reference": "ce16f29cca654702c2ee500ccad9657a2d2e6a09",
+                "shasum": ""
+            },
+            "require": {
+                "bower-asset/jquery-ui": "1.11.*@stable",
+                "yiisoft/yii2": ">=2.0.4"
+            },
+            "type": "yii2-extension",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.0.x-dev"
+                },
+                "asset-installer-paths": {
+                    "npm-asset-library": "vendor/npm",
+                    "bower-asset-library": "vendor/bower"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "yii\\jui\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Qiang Xue",
+                    "email": "qiang.xue@gmail.com"
+                }
+            ],
+            "description": "The Jquery UI extension for the Yii framework",
+            "keywords": [
+                "jQuery UI",
+                "yii2"
+            ],
+            "time": "2015-05-10 22:09:43"
         },
         {
             "name": "yiisoft/yii2-swiftmailer",

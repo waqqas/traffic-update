@@ -11,6 +11,9 @@ return [
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
     'controllerNamespace' => 'console\controllers',
+    'controllerMap' => [
+        'translate' => \lajax\translatemanager\commands\TranslatemanagerController::className()
+    ],
     'components' => [
         'log' => [
             'targets' => [

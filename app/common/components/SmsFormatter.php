@@ -29,7 +29,7 @@ class SmsFormatter extends Formatter
 //            Yii::info("incident: ". print_r($incident, true));
 
             $incLine = $incident->id;
-            $incLine .= ')';
+            $incLine .= '- ';
 
 //            if ($incident->severity) {
 //                switch ($incident->severity) {
@@ -84,6 +84,8 @@ class SmsFormatter extends Formatter
 //                    $format .= '%ss ';
 
                 $incLine .= ' Delay: ' . $incident->delayFromFreeFlow . ' m.';
+
+                $incLine = Yii::t('sms', $incLine);
             }
 
 
