@@ -30,5 +30,9 @@ class m160214_055630_enable_language extends Migration
                 'language_id' => 'ur-PK'
             ]
         );
+
+        $this->delete('{{%language_translate}}', [
+            'language' => 'ur-PK'
+        ]);
     }
 }
