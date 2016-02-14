@@ -43,7 +43,7 @@ class LanguageController extends Controller
                     try {
                         $translatedMsg = Yii::$app->translate->translate($source, $lang->language, $msg->message);
 
-                        Yii::info(print_r($translatedMsg, true));
+//                        Yii::info(print_r($translatedMsg, true));
 
                         /** @var \common\models\LanguageTranslate $tr */
                         $tr = new LanguageTranslate();
@@ -52,7 +52,7 @@ class LanguageController extends Controller
                         $tr->language = $lang->language_id;
                         $tr->translation = html_entity_decode($translatedMsg['data']['translations'][0]['translatedText']);
 
-                        Yii::info(print_r($tr->attributes, true));
+//                        Yii::info(print_r($tr->attributes, true));
 
                         $tr->save();
                     }

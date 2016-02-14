@@ -15,8 +15,8 @@ class m160214_055630_enable_language extends Migration
             ]
         );
 
+        print "Running translation scan" . PHP_EOL;
         \Yii::$app->consoleRunner->run('translate/scan', true);
-        \Yii::$app->consoleRunner->run('language/translate ur-PK', true);
 
     }
 
@@ -30,9 +30,5 @@ class m160214_055630_enable_language extends Migration
                 'language_id' => 'ur-PK'
             ]
         );
-
-        $this->delete('{{%language_translate}}', [
-            'language' => 'ur-PK'
-        ]);
     }
 }
