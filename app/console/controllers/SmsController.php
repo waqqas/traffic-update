@@ -16,8 +16,9 @@ class SmsController extends Controller
 
     public function actionMo(array $ids)
     {
+        $lang = Yii::$app->settings->get('app.language');
 
-        if( empty(Yii::$app->settings->get('app.language'))){
+        if( $lang == null){
             Yii::$app->settings->set('app.language', Yii::$app->sourceLanguage);
         }
 
