@@ -5,6 +5,7 @@ namespace console\controllers;
 
 use common\components\SmsSender;
 use common\models\Incident;
+use common\models\Language;
 use Yii;
 use yii\console\Controller;
 use common\models\Smsmo;
@@ -76,6 +77,8 @@ class SmsController extends Controller
 
 //                                Yii::info(print_r($commandParams, true));
 
+
+
                             }
 
 
@@ -88,25 +91,39 @@ class SmsController extends Controller
                                 $commandParams = array_map('trim', $commandParams);
 
                                 if (count($commandParams) == 1) {
-                                    switch (strtolower($commandParams[0])) {
-                                        case 'urdu':
-                                            Yii::$app->settings->set('app.language', 'ur-PK');
 
-                                            break;
+                                    switch(strtolower($commandParams[0])){
                                         case 'english':
-                                            Yii::$app->settings->set('app.language', 'en-US');
+                                            $language = 'English (US)';
                                             break;
+                                        default:
+                                            $language = ucfirst($commandParams[0]);
+                                    }
 
+                                    /** @var \common\models\Language $lang */
+                                    $lang = Language::findOne([
+                                        'name_ascii' => $language,
+                                        'status' => 1,
+                                    ]);
+
+                                    if($lang) {
+                                        Yii::$app->settings->set('app.language', $lang->language_id);
+
+                                        Yii::$app->language = Yii::$app->settings->get('app.language');
+
+                                        $sms = Yii::t('sms', 'You will receive SMS in {language}', [
+                                            'language' => $lang->name,
+                                        ]);
+
+                                        SmsSender::queueSend($mo->msisdn, $sms);
+                                    }
+                                    else{
+                                        //TODO: send error SMS
                                     }
                                 }
-
-                                Yii::$app->language = Yii::$app->settings->get('app.language');
-
-                                $sms = Yii::t('sms', 'You will receive SMS in {language}', [
-                                    'language' => Yii::t('sms', strtolower($commandParams[0])),
-                                ]);
-
-                                SmsSender::queueSend($mo->msisdn, $sms);
+                                else{
+                                    // TODO: send error SMS
+                                }
                             }
 
 
