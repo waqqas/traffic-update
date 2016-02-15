@@ -29,7 +29,7 @@ class SmsController extends Controller
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
 //                Yii::info(print_r($mo->text,true));
-                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|lang]*)(.*)/i";
+                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|lang|sub|now]*)(.*)/i";
 
 //                Yii::info('regex: '. $regex);
 
@@ -46,6 +46,40 @@ class SmsController extends Controller
                     Yii::info('command: ' . $command);
 
                     switch ($command) {
+                        case 'sub':
+                            // route command and three parameters
+                            if (preg_match('/([0-9|am|pm|:]*)\s*([0-9|am|pm|:]*)/i', $output_array[0], $commandParams)) {
+                                // remove the all matching
+                                array_shift($commandParams);
+
+                                $commandParams = array_map('trim', $commandParams);
+
+//                                Yii::info(print_r($commandParams, true));
+
+                                if(empty($commandParams[0])){
+                                    $commandParams[0] = '08:00';
+                                }
+                                else{
+                                    if( is_numeric($commandParams[0]))  $commandParams[0] .= 'am';
+                                    // convert user given time to 24-hour format
+                                    $commandParams[0] = date('G:i', strtotime($commandParams[0]));
+                                }
+
+                                if(empty($commandParams[1])){
+                                    $commandParams[1] = '17:00';
+                                }
+                                else{
+                                    if( is_numeric($commandParams[1]))  $commandParams[1] .= 'pm';
+                                    // convert user given time to 24-hour format
+                                    $commandParams[1] = date('G:i', strtotime($commandParams[1]));
+                                }
+
+//                                Yii::info(print_r($commandParams, true));
+
+                            }
+
+
+                            break;
                         case 'lang':
                             if (preg_match('/(.*)/i', $output_array[0], $commandParams)) {
                                 // remove the all matching
@@ -65,13 +99,20 @@ class SmsController extends Controller
 
                                     }
                                 }
+
+                                Yii::$app->language = Yii::$app->settings->get('app.language');
+
+                                $sms = Yii::t('sms', 'You will receive SMS in {language}', [
+                                    'language' => Yii::t('sms', strtolower($commandParams[0])),
+                                ]);
+
+                                SmsSender::queueSend($mo->msisdn, $sms);
                             }
 
 
                             break;
+                        case 'now':
                         case '':
-
-                            Yii::info('incident command');
 
                             //command has one optional parameter
                             if (preg_match('/(.*)/i', $output_array[0], $commandParams)) {
