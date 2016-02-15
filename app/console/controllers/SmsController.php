@@ -17,14 +17,18 @@ class SmsController extends Controller
     public function actionMo(array $ids)
     {
 
-        Yii::$app->language = 'ur-PK';
+        if( empty(Yii::$app->settings->get('app.language'))){
+            Yii::$app->settings->set('app.language', Yii::$app->sourceLanguage);
+        }
+
+        Yii::$app->language = Yii::$app->settings->get('app.language');
 
         foreach ($ids as $id) {
             /** @var \common\models\Smsmo $mo */
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
 //                Yii::info(print_r($mo->text,true));
-                $regex = "/" . Yii::$app->params['smsKeyword'] . "([route|i|\\s]*)(.*)/i";
+                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|lang]*)(.*)/i";
 
 //                Yii::info('regex: '. $regex);
 
@@ -41,13 +45,35 @@ class SmsController extends Controller
                     Yii::info('command: ' . $command);
 
                     switch ($command) {
-                        case 'i':
+                        case 'lang':
+                            if (preg_match('/(.*)/i', $output_array[0], $commandParams)) {
+                                // remove the all matching
+                                array_shift($commandParams);
+
+                                $commandParams = array_map('trim', $commandParams);
+
+                                if (count($commandParams) == 1) {
+                                    switch (strtolower($commandParams[0])) {
+                                        case 'urdu':
+                                            Yii::$app->settings->set('app.language', 'ur-PK');
+
+                                            break;
+                                        case 'english':
+                                            Yii::$app->settings->set('app.language', 'en-US');
+                                            break;
+
+                                    }
+                                }
+                            }
+
+
+                            break;
                         case '':
 
                             Yii::info('incident command');
 
                             //command has one optional parameter
-                            if(preg_match('/(.*)/i', $output_array[0], $commandParams)) {
+                            if (preg_match('/(.*)/i', $output_array[0], $commandParams)) {
                                 // remove the all matching
                                 array_shift($commandParams);
 
@@ -64,11 +90,11 @@ class SmsController extends Controller
 
                                 $query = Incident::find()
                                     ->where([
-                                    'enabled' => 1,
-                                ])
-                                ->andWhere([
-                                    'and' ,[ '<=', 'startTime' , $currentTime ], [ '>', 'endTime' , $currentTime ],
-                                ])->orderBy(['severity' => SORT_DESC]);
+                                        'enabled' => 1,
+                                    ])
+                                    ->andWhere([
+                                        'and', ['<=', 'startTime', $currentTime], ['>', 'endTime', $currentTime],
+                                    ])->orderBy(['severity' => SORT_DESC]);
 
                                 $dataProvider = new ActiveDataProvider([
                                     'query' => $query,
@@ -85,7 +111,7 @@ class SmsController extends Controller
 
                                 // Send SMS
 
-                                if ( !empty($sms) && SmsSender::queueSend($mo->msisdn, $sms)) {
+                                if (!empty($sms) && SmsSender::queueSend($mo->msisdn, $sms)) {
                                     $mo->status = 'processed';
                                 } else {
                                     $mo->status = 'queue_error';
@@ -97,7 +123,7 @@ class SmsController extends Controller
                         case 'route':
 
                             // route command and three parameters
-                            if(preg_match('/(.*)( to )(.*)/i', $output_array[0], $commandParams)) {
+                            if (preg_match('/(.*)( to )(.*)/i', $output_array[0], $commandParams)) {
                                 // remove the all matching
                                 array_shift($commandParams);
 
@@ -134,8 +160,7 @@ class SmsController extends Controller
                                         } else {
                                             $mo->status = 'queue_error';
                                         }
-                                    }
-                                    else{
+                                    } else {
                                         //TODO: send sms that route could not be found
                                     }
 
@@ -144,8 +169,7 @@ class SmsController extends Controller
                                     // TODO send route format SMS
                                     $mo->status = 'invalid';
                                 }
-                            }
-                            else{
+                            } else {
                                 // TODO send route format SMS
                                 $mo->status = 'invalid';
                             }

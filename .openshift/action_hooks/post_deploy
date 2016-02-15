@@ -19,6 +19,8 @@ php $OPENSHIFT_DATA_DIR/composer.phar install
 ./init --env=$YII_INIT_ENV --overwrite=$YII_INIT_OVERWRITE
 
 ./yii migrate/up --interactive=0
+./yii migrate/up --migrationPath=@vendor/pheme/yii2-settings/migrations --interactive=0
+
 
 ./yii translate/scan
 

@@ -7,6 +7,10 @@ return [
         'translatemanager' => [
             'class' => 'lajax\translatemanager\Module',
         ],
+        'settings' => [
+            'class' => 'pheme\settings\Module',
+            'sourceLanguage' => 'en'
+        ],
     ],
     'controllerMap' => [
         'translate' => \lajax\translatemanager\commands\TranslatemanagerController::className()
@@ -61,6 +65,9 @@ return [
                     'on missingTranslation' => ['common\components\TranslationEventHandler', 'handleMissingTranslation']
                 ],
             ],
+        ],
+        'settings' => [
+            'class' => 'pheme\settings\components\Settings'
         ],
     ],
 ];
