@@ -29,15 +29,12 @@ class LanguageController extends Controller
                     return $item['id'];
                 }, $alreadyTranslated);
 
-                Yii::info(print_r($alreadyTranslated, true));
-
-
                 // find all messages to be translated
                 $sourceMsgs = LanguageSource::find()->where([
                     'not in', 'id', $alreadyTranslated
                 ])->all();
 
-                $source = substr(Yii::$app->language, 0, strpos(Yii::$app->language, '-'));
+                $source = substr(Yii::$app->sourceLanguage, 0, strpos(Yii::$app->sourceLanguage, '-'));
 
                 foreach($sourceMsgs as $msg){
                     try {

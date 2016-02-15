@@ -19,3 +19,13 @@ php $OPENSHIFT_DATA_DIR/composer.phar install
 ./init --env=$YII_INIT_ENV --overwrite=$YII_INIT_OVERWRITE
 
 ./yii migrate/up --interactive=0
+
+./yii translate/scan
+
+./yii language/translate ur-PK
+
+# flush cache so that translations are retrieved from DB
+ ./yii cache/flush cache --interactive=0
+
+
+

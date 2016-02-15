@@ -20,7 +20,7 @@ class SmsFormatter extends Formatter
         }
     }
 
-    public function asIncidentsSMS($incidents, $prefix)
+    public function asIncidentsSMS($incidents, $prefix = '')
     {
         $sms = $prefix;
 
@@ -28,72 +28,40 @@ class SmsFormatter extends Formatter
         foreach ($incidents as $incident) {
 //            Yii::info("incident: ". print_r($incident, true));
 
-            $incLine = $incident->id;
-            $incLine .= '- ';
-
-//            if ($incident->severity) {
-//                switch ($incident->severity) {
-//                    case 1:
-//                        $incLine .= "Mild";
-//                        break;
-//                    case 2:
-//                        $incLine .= "Moderate";
-//                        break;
-//                    case 3:
-//                        $incLine .= "High";
-//                        break;
-//                    case 4:
-//                        $incLine .= "Severe";
-//                        break;
-//                }
-//                $incLine .= ' ';
-//            }
-
-            switch ($incident->type) {
-                case 1: // Construction
-                    $incLine .= "Construction";
-                    break;
-                case 2: // Event
-                    $incLine .= "Event";
-                    break;
-                case 3: // Congestion/Flow
-                    $incLine .= "Congestion";
-                    break;
-                case 4: // Incident/accident
-                    $incLine .= "Accident";
-                    break;
-                default:
-                    $incLine .= "Unknown event";
-
-            }
-
-            $incLine .= ' at ';
-            $incLine .= ucfirst($incident->location);
-            $incLine .= ".";
-
-            if ($incident->delayFromFreeFlow) {
-//                $delay = new \DateInterval("P" . $incident->delayFromFreeFlow ."M");
-//
-//                $format = '';
-//
-//                if($delay->h != 0)
-//                    $format .= '%hh ';
-//                if($delay->m != 0);
-//                    $format .= '%im ';
-//                if($delay->s != 0)
-//                    $format .= '%ss ';
-
-                $incLine .= ' Delay: ' . $incident->delayFromFreeFlow . ' m.';
-
-                $incLine = Yii::t('sms', $incLine);
-            }
-
-
-            //
-            $sms .= $incLine . PHP_EOL;
+            $incLine = Yii::t('sms', '{id}- {incident} at {location}. Delay: {delay} minutes', [
+                    'id' => $incident->id,
+                    'incident' => $this->getIncident($incident),
+                    'location' => Yii::t('sms', $incident->location),
+                    'delay' => $incident->delayFromFreeFlow
+                ]);
+            $sms .= $incLine . "\n\n";
         }
 
         return $sms;
+    }
+
+
+    /** @param \common\models\Incident $incident */
+    private function getIncident($incident){
+        switch ($incident->type) {
+            case 1: // Construction
+                $name = Yii::t('sms', "Construction");
+                break;
+            case 2: // Event
+                $name = Yii::t('sms', "Event");
+                break;
+            case 3: // Congestion/Flow
+                $name = Yii::t('sms', "Congestion");
+                break;
+            case 4: // Incident/accident
+                $name = Yii::t('sms', "Accident");
+                break;
+            default:
+                $name = Yii::t('sms', "Unknown event");
+
+        }
+
+        return $name;
     }
 
     public function asRouteSMS($info, $prefix = '')

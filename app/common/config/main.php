@@ -8,6 +8,9 @@ return [
             'class' => 'lajax\translatemanager\Module',
         ],
     ],
+    'controllerMap' => [
+        'translate' => \lajax\translatemanager\commands\TranslatemanagerController::className()
+    ],
     'components' => [
         'cache' => [
             'class' => 'yii\caching\FileCache',
@@ -55,6 +58,7 @@ return [
                     'messageTable' => '{{%language_translate}}',
                     'cachingDuration' => 86400,
                     'enableCaching' => true,
+                    'on missingTranslation' => ['common\components\TranslationEventHandler', 'handleMissingTranslation']
                 ],
             ],
         ],
