@@ -15,16 +15,22 @@ use yii\data\ActiveDataProvider;
 class SmsController extends Controller
 {
 
-    public function actionMo(array $ids)
+    public function beforeAction($action)
     {
         $lang = Yii::$app->settings->get('app.language');
 
+        // set default value
         if ($lang == null) {
             Yii::$app->settings->set('app.language', Yii::$app->sourceLanguage);
         }
 
         Yii::$app->language = Yii::$app->settings->get('app.language');
 
+        return parent::beforeAction($action);
+    }
+
+    public function actionMo(array $ids)
+    {
         foreach ($ids as $id) {
             /** @var \common\models\Smsmo $mo */
             $mo = Smsmo::findOne(['id' => $id]);
