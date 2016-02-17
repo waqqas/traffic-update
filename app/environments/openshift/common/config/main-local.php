@@ -14,6 +14,8 @@ return [
             'username' => 'adminnYXGEh1',
             'password' => 'r6dLBGRqDtuM',
             'charset' => 'utf8',
+            'enableSchemaCache' => true,
+            'schemaCacheDuration' => 0,
         ],
         'mailer' => [
             'class' => 'yii\swiftmailer\Mailer',
