@@ -1,8 +1,8 @@
 <?php
-/**
- * @var \omnilight\scheduling\Schedule $schedule
- */
 
-// Place here all of your cron jobs
+$logDir = getenv('OPENSHIFT_PHP_LOG_DIR');
 
-$schedule->exec('ls')->everyMinute();
+
+/** @var \omnilight\scheduling\Schedule $schedule */
+$schedule->command('cron/run')->everyMinute()->sendOutputTo($logDir . '/cron.log');
+

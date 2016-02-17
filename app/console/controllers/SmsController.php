@@ -114,7 +114,7 @@ class SmsController extends Controller
         }
     }
 
-    public function actionSub($paramString)
+    public function actionSub($msisdn, $paramString)
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
@@ -141,6 +141,28 @@ class SmsController extends Controller
                 // convert user given time to 24-hour format
                 $commandParams[1] = date('G:i', strtotime($commandParams[1]));
             }
+
+            /** @var \omnilight\scheduling\Schedule $schedule */
+            $schedule = Yii::$app->schedule;
+
+            $command = implode( ' ', [
+                'sms/now',
+                $msisdn,
+                "islamabad",
+            ]);
+
+            Yii::info( "SMS sending time: " . $commandParams[0] . " and " . $commandParams[1]);
+
+            $schedule->command($command)->dailyAt($commandParams[0]);
+            $schedule->command($command)->dailyAt($commandParams[1]);
+
+//            $events = Yii::$app->settings->get('app.events');
+//            if( $events != null){
+//                $events = base64_decode($events);
+//            }
+            $events = serialize($schedule->getEvents());
+
+            Yii::$app->settings->set("$msisdn.events", base64_encode($events));
         }
 
         return $status;

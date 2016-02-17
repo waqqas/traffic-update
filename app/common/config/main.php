@@ -1,5 +1,6 @@
 <?php
 return [
+    'timeZone' => 'Asia/Karachi',
     'language' => 'en-US',
     'sourceLanguage' => 'en-US',
     'vendorPath' => dirname(dirname(__DIR__)) . '/vendor',
@@ -47,7 +48,7 @@ return [
             'class' => 'common\components\SmsFormatter',
         ],
         'schedule' => [
-            'class' => 'omnilight\scheduling\Schedule',
+            'class' => 'common\components\Schedule',
         ],
         'translate' => [
             'class' => 'richweber\google\translate\Translation',
@@ -68,6 +69,12 @@ return [
         ],
         'settings' => [
             'class' => 'pheme\settings\components\Settings'
+        ],
+        'db' => [
+            'on afterOpen' => function($event) {
+                $timeZone = date('P');
+                $event->sender->createCommand("SET time_zone = '$timeZone'")->execute();
+            }
         ],
     ],
 ];
