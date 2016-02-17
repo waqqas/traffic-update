@@ -33,6 +33,10 @@ return [
         ],
         'translate' => [
             'key' => 'AIzaSyAfqjLZ0Dwhb8_U82T2Yji3BP-O5E54kHI',
-        ]
+        ],
+        'settings' => [
+            'cache' => null,
+        ],
+
     ],
 ];

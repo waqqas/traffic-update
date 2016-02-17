@@ -15,18 +15,18 @@ use yii\data\ActiveDataProvider;
 class SmsController extends Controller
 {
 
-    public function beforeAction($action)
-    {
-        $lang = Yii::$app->settings->get('app.language');
 
-        // set default value
-        if ($lang == null) {
-            Yii::$app->settings->set('app.language', Yii::$app->sourceLanguage);
+    private function loadSettings($msisdn){
+
+        // set user's preferred language as application language
+
+        $language = Yii::$app->settings->get("$msisdn.language");
+
+        if( $language === null){
+            $language = Yii::$app->sourceLanguage;
         }
 
-        Yii::$app->language = Yii::$app->settings->get('app.language');
-
-        return parent::beforeAction($action);
+        Yii::$app->language = $language;
     }
 
     public function actionMo(array $ids)
@@ -118,13 +118,13 @@ class SmsController extends Controller
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
+        $this->loadSettings($msisdn);
+
         if (preg_match('/([0-9|am|pm|:]*)\s*([0-9|am|pm|:]*)/i', $paramString, $commandParams)) {
             // remove the all matching
             array_shift($commandParams);
 
             $commandParams = array_map('trim', $commandParams);
-
-//                                Yii::info(print_r($commandParams, true));
 
             if (empty($commandParams[0])) {
                 $commandParams[0] = '08:00';
@@ -142,27 +142,31 @@ class SmsController extends Controller
                 $commandParams[1] = date('G:i', strtotime($commandParams[1]));
             }
 
-            /** @var \omnilight\scheduling\Schedule $schedule */
-            $schedule = Yii::$app->schedule;
-
             $command = implode( ' ', [
                 'sms/now',
                 $msisdn,
-                "islamabad",
+                "islamabad",        // TODO: get user's preferred location
             ]);
 
-            Yii::info( "SMS sending time: " . $commandParams[0] . " and " . $commandParams[1]);
+            Yii::info( "SMS sending times: " . $commandParams[0] . " and " . $commandParams[1]);
+
+            /** @var \common\components\Schedule $schedule */
+            $schedule = Yii::$app->schedule;
 
             $schedule->command($command)->dailyAt($commandParams[0]);
             $schedule->command($command)->dailyAt($commandParams[1]);
 
-//            $events = Yii::$app->settings->get('app.events');
-//            if( $events != null){
-//                $events = base64_decode($events);
-//            }
             $events = serialize($schedule->getEvents());
 
             Yii::$app->settings->set("$msisdn.events", base64_encode($events));
+
+            $sms = Yii::t('sms', 'You will receive SMS daily at {amTime} and {pmTime}', [
+                'amTime' => $commandParams[0],
+                'pmTime' => $commandParams[1]
+            ]);
+
+            SmsSender::queueSend($msisdn, $sms);
+
         }
 
         return $status;
@@ -171,6 +175,8 @@ class SmsController extends Controller
     public function actionLang($msisdn, $paramString)
     {
         $status = Controller::EXIT_CODE_NORMAL;
+
+        $this->loadSettings($msisdn);
 
         if (preg_match('/(.*)/i', $paramString, $commandParams)) {
             // remove the all matching
@@ -195,11 +201,11 @@ class SmsController extends Controller
                 ]);
 
                 if ($lang) {
-                    Yii::$app->settings->set('app.language', $lang->language_id);
+                    Yii::$app->settings->set("$msisdn.language", $lang->language_id);
 
-                    Yii::$app->language = Yii::$app->settings->get('app.language');
+                    Yii::$app->language = $lang->language_id;
 
-                    $sms = Yii::t('sms', 'You will receive SMS in {language}', [
+                    $sms = Yii::t('sms', 'You will now receive SMS in {language}', [
                         'language' => $lang->name,
                     ]);
 
@@ -218,6 +224,8 @@ class SmsController extends Controller
     public function actionNow($msisdn, $paramString)
     {
         $status = Controller::EXIT_CODE_NORMAL;
+
+        $this->loadSettings($msisdn);
 
         //command has one optional parameter
         if (preg_match('/(.*)/i', $paramString, $commandParams)) {
@@ -275,6 +283,7 @@ class SmsController extends Controller
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
+        $this->loadSettings($msisdn);
 
         // route command and three parameters
         if (preg_match('/(.*)( to )(.*)/i', $paramString, $commandParams)) {

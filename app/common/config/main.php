@@ -68,7 +68,7 @@ return [
             ],
         ],
         'settings' => [
-            'class' => 'pheme\settings\components\Settings'
+            'class' => 'pheme\settings\components\Settings',
         ],
         'db' => [
             'on afterOpen' => function($event) {
