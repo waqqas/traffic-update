@@ -6,6 +6,7 @@ namespace console\controllers;
 use common\components\SmsSender;
 use common\models\Incident;
 use common\models\Language;
+use pheme\settings\models\Setting;
 use Yii;
 use yii\console\Controller;
 use common\models\Smsmo;
@@ -20,10 +21,21 @@ class SmsController extends Controller
 
         // set user's preferred language as application language
 
-        $language = Yii::$app->settings->get("$msisdn.language");
+//        $language = Yii::$app->settings->get("$msisdn.language");
 
-        if( $language === null){
+
+        // @var \pheme\settings\models\Setting $setting
+        $setting = Setting::findOne([
+            'key' => 'language',
+            'section' => $msisdn,
+            'active' => 1,
+        ]);
+
+        if( $setting == null){
             $language = Yii::$app->sourceLanguage;
+        }
+        else{
+            $language = $setting->value;
         }
 
         Yii::$app->language = $language;
