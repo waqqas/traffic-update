@@ -48,7 +48,7 @@ class SmsController extends Controller
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
 //                Yii::info(print_r($mo->text,true));
-                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|lang|sub|now]*)(.*)/i";
+                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|lang|sub|now|unsub]*)(.*)/i";
 
 //                Yii::info('regex: '. $regex);
 
@@ -69,7 +69,7 @@ class SmsController extends Controller
 
                     Yii::info('command: ' . $command);
 
-                    if (in_array($command, ['sub', 'lang', 'route', 'now'])) {
+                    if (in_array($command, ['sub', 'lang', 'route', 'now', 'unsub'])) {
                         $runCommand = implode(' ', [
                             'sms/' . $command,
                             $mo->msisdn,
@@ -356,4 +356,23 @@ class SmsController extends Controller
 
         return $status;
     }
+
+    public function actionUnsub($msisdn, $paramString)
+    {
+        $status = Controller::EXIT_CODE_NORMAL;
+
+        $this->loadSettings($msisdn);
+
+        /** @var \pheme\settings\components\Settings $settings */
+        $settings = Yii::$app->settings;
+
+        $settings->delete("$msisdn.events");
+
+        $sms = Yii::t('sms', 'You will not receive daily SMS');
+
+        SmsSender::queueSend($msisdn, $sms);
+
+        return $status;
+    }
+
 }
