@@ -12,6 +12,12 @@ return [
             'class' => 'pheme\settings\Module',
             'sourceLanguage' => 'en'
         ],
+        'user' => [
+            'class' => 'dektrium\user\Module',
+        ],
+        'rbac' => [
+            'class' => 'dektrium\rbac\Module',
+        ],
     ],
     'controllerMap' => [
         'translate' => \lajax\translatemanager\commands\TranslatemanagerController::className()
