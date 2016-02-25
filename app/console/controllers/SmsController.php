@@ -186,7 +186,7 @@ class SmsController extends Controller
 
             $sms .= "\n";
 
-            $sms .= Yii::t('sms', 'To unsubscribe, send {message} at {shortCode}', [
+            $sms .= Yii::t('sms', 'Send {message} at {shortCode} to unsubscribe', [
                 'message' => Yii::$app->params['smsKeyword'] . " UNSUB",
                 'shortCode' => Yii::$app->params['smsShortCode'],
             ]);
