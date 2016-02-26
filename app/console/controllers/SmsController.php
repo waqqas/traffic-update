@@ -116,7 +116,7 @@ class SmsController extends Controller
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
 //                Yii::info(print_r($mo->text,true));
-                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|lang|sub|now|unsub|report|city]*)(.*)/i";
+                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|lang|sub|now|unsub|report|city|help]*)(.*)/i";
 
 //                Yii::info('regex: '. $regex);
 
@@ -132,12 +132,12 @@ class SmsController extends Controller
 
                     // default command
                     if (empty($command)) {
-                        $command = 'now';
+                        $command = 'help';
                     }
 
                     Yii::info('command: ' . $command);
 
-                    if (in_array($command, ['sub', 'lang', 'route', 'now', 'unsub', 'report', 'city'])) {
+                    if (in_array($command, ['sub', 'lang', 'route', 'now', 'unsub', 'report', 'city', 'help'])) {
                         $runCommand = implode(' ', [
                             'sms/' . $command,
                             $mo->msisdn,
@@ -402,14 +402,7 @@ class SmsController extends Controller
 
                     Yii::info($sms);
 
-                    // Send SMS
-
-                    if (SmsSender::queueSend($msisdn, $sms)) {
-//                        $mo->status = 'processed';
-                    } else {
-//                        $mo->status = 'queue_error';
-                        $status = Controller::EXIT_CODE_ERROR;
-                    }
+                    SmsSender::queueSend($msisdn, $sms);
                 } else {
                     //TODO: send sms that route could not be found
                     $status = Controller::EXIT_CODE_ERROR;
@@ -418,12 +411,10 @@ class SmsController extends Controller
 
             } else {
                 // TODO send route format SMS
-//                $mo->status = 'invalid';
                 $status = Controller::EXIT_CODE_ERROR;
             }
         } else {
             // TODO send route format SMS
-//            $mo->status = 'invalid';
             $status = Controller::EXIT_CODE_ERROR;
 
         }
@@ -600,6 +591,71 @@ class SmsController extends Controller
                 }
             }
         }
+
+        return $status;
+    }
+
+    public function actionHelp($msisdn, $paramString)
+    {
+        $status = Controller::EXIT_CODE_NORMAL;
+
+        $this->loadSettings($msisdn);
+
+        $sms = Yii::t('sms', 'Help Menu\nAvailable commands: {commands}\n',[
+            'commands' => 'NOW LANG SUB UNSUB REPORT CITY',
+        ]);
+
+        if( empty($paramString)) $paramString = 'help now';
+
+        foreach( explode(' ', $paramString) as $command){
+            switch(strtolower($command)){
+                case 'lang':
+                    $sms .= Yii::t('sms', 'Select language: {message}\nEx: {example}', [
+                        'message' => 'TUP LANG <urdu/english> ',
+                        'example' => 'TUP LANG URDU',
+                    ]);
+                    break;
+                case 'sub':
+                    $sms .= Yii::t('sms', 'Subscribe to daily notifications: {message}\nEx: {example}', [
+                        'message' => 'TUP SUB <AM time> <PM time>',
+                        'example' => 'TUP SUB 8:30 5:00'
+                    ]);
+                    break;
+                case 'now':
+                    $sms .= Yii::t('sms', 'Get current traffic situation: {message}', [
+                        'message' => 'TUP NOW',
+                    ]);
+                    break;
+                case 'unsub':
+                    $sms .= Yii::t('sms', 'Unsubscribe from daily notifications: {message}', [
+                        'message' => 'TUP UNSUB'
+                    ]);
+                    break;
+                case 'report':
+                    $sms .= Yii::t('sms', 'Report traffic problem: {message}\nEx: {example}', [
+                        'message' => 'TUP REPORT <congestion/accident/blockade/construction> AT <location>',
+                        'example' => 'TUP REPORT accident AT Faizabad Interchange',
+                    ]);
+                    break;
+                case 'city':
+                    $sms .= Yii::t('sms', 'Set current city: {message}\nEx: {example}', [
+                        'message' => 'TUP CITY <city-name>',
+                        'example' => 'TUP CITY ISLAMABAD',
+
+                    ]);
+                    break;
+                case 'help':
+                    $sms .= Yii::t('sms', 'Get help on command by {message}\nEx: {example}', [
+                        'message' => 'TUP HELP <commands>',
+                        'example' => 'TUP HELP SUB',
+
+                    ]);
+                    break;
+            }
+            $sms .= "\n";
+
+        }
+        SmsSender::queueSend($msisdn, $sms);
 
         return $status;
     }
