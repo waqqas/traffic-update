@@ -116,7 +116,7 @@ class SmsController extends Controller
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
 //                Yii::info(print_r($mo->text,true));
-                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|lang|sub|now|unsub|report|city|help]*)(.*)/i";
+                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|language|sub|now|unsub|report|city|help]*)(.*)/i";
 
 //                Yii::info('regex: '. $regex);
 
@@ -137,7 +137,7 @@ class SmsController extends Controller
 
                     Yii::info('command: ' . $command);
 
-                    if (in_array($command, ['sub', 'lang', 'route', 'now', 'unsub', 'report', 'city', 'help'])) {
+                    if (in_array($command, ['sub', 'language', 'route', 'now', 'unsub', 'report', 'city', 'help'])) {
                         $runCommand = implode(' ', [
                             'sms/' . $command,
                             $mo->msisdn,
@@ -263,7 +263,7 @@ class SmsController extends Controller
         return $status;
     }
 
-    public function actionLang($msisdn, $paramString)
+    public function actionLanguage($msisdn, $paramString)
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
@@ -601,18 +601,18 @@ class SmsController extends Controller
 
         $this->loadSettings($msisdn);
 
-        $sms = Yii::t('sms', 'Help Menu\nAvailable commands: {commands}\n',[
-            'commands' => 'NOW LANG SUB UNSUB REPORT CITY',
+        $sms = Yii::t('sms', 'Help Menu:\nAvailable commands: {commands}\n',[
+            'commands' => 'NOW LANGUAGE SUB UNSUB REPORT CITY',
         ]);
 
         if( empty($paramString)) $paramString = 'help now';
 
         foreach( explode(' ', $paramString) as $command){
             switch(strtolower($command)){
-                case 'lang':
+                case 'language':
                     $sms .= Yii::t('sms', 'Select language: {message}\nEx: {example}', [
-                        'message' => 'TUP LANG <urdu/english> ',
-                        'example' => 'TUP LANG URDU',
+                        'message' => 'TUP LANGUAGE <urdu/english> ',
+                        'example' => 'TUP LANGUAGE URDU',
                     ]);
                     break;
                 case 'sub':
