@@ -26,7 +26,7 @@ class GoogleMaps extends Component
     public function geocode($address, $region = null)
     {
 
-        if( $region == null ) $region = Yii::$app->params['defaultLocation'];
+        if( !empty($region) ) $region = Yii::$app->params['defaultLocation'];
 
         $query = http_build_query([
             'key' => $this->apiKey,
@@ -55,7 +55,7 @@ class GoogleMaps extends Component
 
     public function route($from, $to, $region = null)
     {
-        if( $region == null ) $region = Yii::$app->params['defaultLocation'];
+        if( !empty($region) ) $region = Yii::$app->params['defaultLocation'];
 
         $query = http_build_query([
             'key' => $this->apiKey,

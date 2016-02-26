@@ -16,6 +16,58 @@ use yii\data\ActiveDataProvider;
 class SmsController extends Controller
 {
 
+    private function getUserCity()
+    {
+        return $this->getPropByType('long_name', 'locality');
+    }
+
+    private function getUserCountry()
+    {
+        return $this->getPropByType('long_name', 'country');
+    }
+
+    private function getPropByType($prop, $type)
+    {
+        if( !isset(Yii::$app->smsUser->location)){
+            $value = null;
+
+            switch($type){
+                case 'locality':
+                    $value = Yii::$app->params['defaultCity'];
+                    break;
+                case 'country':
+                    $value = Yii::$app->params['defaultCountry'];
+                    break;
+            }
+
+            return $value;
+        }
+
+        foreach (Yii::$app->smsUser->location->address_components as $address) {
+            foreach ($address->types as $userType)
+                if ($userType == $type) {
+                    return $address->{$prop};
+                }
+        }
+    }
+
+    private function matchUserLocation($location)
+    {
+        $match = false;
+
+        $userCity = $this->getUserCity();
+        foreach ($location->address_components as $address) {
+            foreach ($address->types as $type) {
+                if ($type == 'locality' && $address->long_name == $userCity)
+                    $match = true;
+                break;
+            }
+            if ($match == true)
+                break;
+        }
+
+        return $match;
+    }
 
     private function loadSettings($msisdn)
     {
@@ -41,14 +93,19 @@ class SmsController extends Controller
         Yii::$app->language = $language;
 
         Yii::$app->setComponents([
-           'smsUser' => [
-               'class' => 'StdClass'
-           ]
+            'smsUser' => [
+                'class' => 'StdClass'
+            ]
         ]);
 
-        $city = Yii::$app->settings->get("$msisdn.city") != null? Yii::$app->settings->get("$msisdn.city") : Yii::$app->params['defaultLocation'];
+        if (($location = Yii::$app->settings->get("$msisdn.location")) != null) {
+            $location = unserialize(base64_decode($location));
 
-        Yii::$app->smsUser->city = $city;
+            Yii::$app->smsUser->location = $location;
+        } else {
+            Yii::$app->smsUser->location = null;
+        }
+
 
     }
 
@@ -172,7 +229,7 @@ class SmsController extends Controller
             $command = implode(' ', [
                 'sms/now',
                 $msisdn,
-                Yii::$app->smsUser->city
+                $this->getUserCity(),
             ]);
 
             Yii::info("SMS sending times: " . $amTime . " and " . $pmTime);
@@ -268,11 +325,14 @@ class SmsController extends Controller
 
             $commandParams = array_map('trim', $commandParams);
 
-            $location = Yii::$app->smsUser->city;
+
 
             // one optional parameter to route command
             if (count($commandParams) == 1) {
                 $location = $commandParams[0];
+            }
+            else{
+                $location = $this->getUserCity();
             }
 
             $currentTime = time();
@@ -298,15 +358,7 @@ class SmsController extends Controller
 
             Yii::info("sms:" . $sms);
 
-            // Send SMS
-
-            if (SmsSender::queueSend($msisdn, $sms)) {
-//                $mo->status = 'processed';
-            } else {
-//                $mo->status = 'queue_error';
-                $status = Controller::EXIT_CODE_ERROR;
-
-            }
+            SmsSender::queueSend($msisdn, $sms);
 
         }
 
@@ -330,9 +382,10 @@ class SmsController extends Controller
                 $from = $commandParams[0];
                 $to = $commandParams[2];
 
-                $fromAddresses = Yii::$app->googleMaps->geocode($from, Yii::$app->smsUser->city);
+                $userCountry = $this->getUserCountry();
+                $fromAddresses = Yii::$app->googleMaps->geocode($from, $userCountry);
 
-                $toAddresses = Yii::$app->googleMaps->geocode($to, Yii::$app->smsUser->city);
+                $toAddresses = Yii::$app->googleMaps->geocode($to, $userCountry);
 
                 $from = $fromAddresses[0]->geometry->location->lat . "," . $fromAddresses[0]->geometry->location->lng;
                 $to = $toAddresses[0]->geometry->location->lat . "," . $toAddresses[0]->geometry->location->lng;
@@ -438,36 +491,48 @@ class SmsController extends Controller
                         $incidentText = 'unknown event';
                 }
 
-                $incidentLocation = Yii::$app->googleMaps->geocode($location, Yii::$app->smsUser->city);
+                $incidentLocation = Yii::$app->googleMaps->geocode($location);
+
+                Yii::info(print_r($incidentLocation, true));
 
                 if (count($incidentLocation) > 0) {
 
-                    $incident->lat = $incidentLocation[0]->geometry->location->lat;
-                    $incident->lng = $incidentLocation[0]->geometry->location->lng;
-                    $incident->location = $incidentLocation[0]->formatted_address;
-                    $incident->description = ucfirst($incidentText);
-                    $incident->severity = 1;
-                    $incident->eventCode = 1;
-                    $incident->startTime = time();
-                    $incident->endTime = $incident->startTime + (30 * 60);  // 30 minutes
-                    $incident->delayFromFreeFlow = 10;
-                    $incident->delayFromTypical = 10;
-                    $incident->created_at = 0;
-                    $incident->updated_at = 0;
+                    if ($this->matchUserLocation($incidentLocation[0])) {
 
-                    //disable it, till it is confirmed by the admin
-                    $incident->enabled = 0;
+                        $incident->lat = $incidentLocation[0]->geometry->location->lat;
+                        $incident->lng = $incidentLocation[0]->geometry->location->lng;
+                        $incident->location = $incidentLocation[0]->formatted_address;
+                        $incident->description = ucfirst($incidentText);
+                        $incident->severity = 1;
+                        $incident->eventCode = 1;
+                        $incident->startTime = time();
+                        $incident->endTime = $incident->startTime + (30 * 60);  // 30 minutes
+                        $incident->delayFromFreeFlow = 10;
+                        $incident->delayFromTypical = 10;
+                        $incident->created_at = 0;
+                        $incident->updated_at = 0;
 
-                    $incident->save();
+                        //disable it, till it is confirmed by the admin
+                        $incident->enabled = 0;
 
-                    $sms = Yii::t('sms', 'Thank you for reporting {incident} at {location}', [
-                        'incident' => Yii::t('sms', $incidentText),
-                        'location' => Yii::t('sms', $incidentLocation[0]->formatted_address)
-                    ]);
+                        $incident->save();
 
-                    SmsSender::queueSend($msisdn, $sms);
+                        $sms = Yii::t('sms', 'Thank you for reporting {incident} at {location}', [
+                            'incident' => Yii::t('sms', $incidentText),
+                            'location' => Yii::t('sms', $incidentLocation[0]->formatted_address)
+                        ]);
+
+                        SmsSender::queueSend($msisdn, $sms);
+                    } else {
+                        $sms = Yii::t('sms', 'Sorry, you can not report in {location}', [
+                            'location' => Yii::t('sms', $incidentLocation[0]->formatted_address),
+                        ]);
+
+                        SmsSender::queueSend($msisdn, $sms);
+                    }
+
                 } else {
-                    $sms = Yii::t('Sorry, {location} is not a valid location', [
+                    $sms = Yii::t('sms', 'Sorry, {location} is not correct', [
                         'location' => $location,
                     ]);
 
@@ -515,7 +580,7 @@ class SmsController extends Controller
                     }
 
                     if ($localityFound) {
-                        Yii::$app->settings->set("$msisdn.city", $localityFound->long_name);
+                        Yii::$app->settings->set("$msisdn.location", base64_encode(serialize($localityFound)));
 
                         $sms = Yii::t('sms', 'You will receive notifications of {city}', [
                             'city' => Yii::t('sms', $localityFound->long_name),
