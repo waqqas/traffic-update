@@ -132,34 +132,30 @@ class SmsController extends Controller
 
         $this->loadSettings($msisdn);
 
-        if (preg_match('/([0-9|am|pm|:]*)\s*([0-9|am|pm|:]*)/i', $paramString, $commandParams)) {
+        if (preg_match('/(0?\d*|1*[0-2]*):*(0\d*|[0-5]*\d*)\s*(0?\d*|1*[0-2]*):*(0\d*|[0-5]*\d*)/i', $paramString, $commandParams)) {
             // remove the all matching
             array_shift($commandParams);
 
             $commandParams = array_map('trim', $commandParams);
 
             if (empty($commandParams[0])) {
-                $commandParams[0] = '08:00';
-            } else {
-                if (is_numeric($commandParams[0])) $commandParams[0] .= 'am';
-//                if( preg_match( '/[0-9]+:[0-9]+/i', $commandParams[0])){
-//                    $commandParams[0] .= 'am';
-//                }
-                // convert user given time to 24-hour format
-                $commandParams[0] = date('G:i', strtotime($commandParams[0]));
+                $commandParams[0] = '8';  // 8 am
             }
-
             if (empty($commandParams[1])) {
-                $commandParams[1] = '17:00';
-            } else {
-                if (is_numeric($commandParams[1])) $commandParams[1] .= 'pm';
-//                if( preg_match( '/[0-9]+:[0-9]+/i', $commandParams[0])){
-//                    $commandParams[0] .= 'pm';
-//                }
-
-                // convert user given time to 24-hour format
-                $commandParams[1] = date('G:i', strtotime($commandParams[1]));
+                $commandParams[1] = '00';  // 0 minutes
             }
+
+            if (empty($commandParams[2])) {
+                $commandParams[2] = '5';  // 5 pm
+            }
+            if (empty($commandParams[3])) {
+                $commandParams[3] = '00';  // 0 minutes
+            }
+
+
+            $amTime = date('G:i', strtotime($commandParams[0] . ":" . $commandParams[1] . "am"));
+            $pmTime = date('G:i', strtotime($commandParams[2] . ":" . $commandParams[3] . "pm"));
+
 
             $command = implode(' ', [
                 'sms/now',
@@ -167,21 +163,21 @@ class SmsController extends Controller
                 "islamabad",        // TODO: get user's preferred location
             ]);
 
-            Yii::info("SMS sending times: " . $commandParams[0] . " and " . $commandParams[1]);
+            Yii::info("SMS sending times: " . $amTime . " and " . $pmTime);
 
             /** @var \common\components\Schedule $schedule */
             $schedule = Yii::$app->schedule;
 
-            $schedule->command($command)->dailyAt($commandParams[0]);
-            $schedule->command($command)->dailyAt($commandParams[1]);
+            $schedule->command($command)->dailyAt($amTime);
+            $schedule->command($command)->dailyAt($pmTime);
 
             $events = serialize($schedule->getEvents());
 
             Yii::$app->settings->set("$msisdn.events", base64_encode($events));
 
             $sms = Yii::t('sms', 'You will receive SMS daily at {amTime} and {pmTime}', [
-                'amTime' => $commandParams[0],
-                'pmTime' => $commandParams[1]
+                'amTime' => $amTime,
+                'pmTime' => $pmTime,
             ]);
 
             $sms .= "\n";
