@@ -601,58 +601,56 @@ class SmsController extends Controller
 
         $this->loadSettings($msisdn);
 
-        $sms = Yii::t('sms', 'Help Menu:\nAvailable commands: {commands}\n',[
-            'commands' => 'NOW LANGUAGE SUB UNSUB REPORT CITY',
-        ]);
+        $sms = Yii::t('sms', 'Help Menu:\n');
 
-        if( empty($paramString)) $paramString = 'help now';
+        if( empty($paramString)) $paramString = 'now';
 
         foreach( explode(' ', $paramString) as $command){
             switch(strtolower($command)){
                 case 'language':
-                    $sms .= Yii::t('sms', 'Select language: {message}\nEx: {example}', [
+                    $sms .= Yii::t('sms', 'To select language: Send {message}\nEx: {example}', [
                         'message' => 'TUP LANGUAGE <urdu/english> ',
                         'example' => 'TUP LANGUAGE URDU',
                     ]);
                     break;
                 case 'sub':
-                    $sms .= Yii::t('sms', 'Subscribe to daily notifications: {message}\nEx: {example}', [
+                    $sms .= Yii::t('sms', 'To subscribe to daily notifications: Send {message}\nEx: {example}', [
                         'message' => 'TUP SUB <AM time> <PM time>',
                         'example' => 'TUP SUB 8:30 5:00'
                     ]);
                     break;
                 case 'now':
-                    $sms .= Yii::t('sms', 'Get current traffic situation: {message}', [
+                    $sms .= Yii::t('sms', 'To get current traffic situation: Send {message}', [
                         'message' => 'TUP NOW',
                     ]);
                     break;
                 case 'unsub':
-                    $sms .= Yii::t('sms', 'Unsubscribe from daily notifications: {message}', [
+                    $sms .= Yii::t('sms', 'To unsubscribe from daily notifications: Send {message}', [
                         'message' => 'TUP UNSUB'
                     ]);
                     break;
                 case 'report':
-                    $sms .= Yii::t('sms', 'Report traffic problem: {message}\nEx: {example}', [
+                    $sms .= Yii::t('sms', 'To report traffic problem: Send {message}\nEx: {example}', [
                         'message' => 'TUP REPORT <congestion/accident/blockade/construction> AT <location>',
                         'example' => 'TUP REPORT accident AT Faizabad Interchange',
                     ]);
                     break;
                 case 'city':
-                    $sms .= Yii::t('sms', 'Set current city: {message}\nEx: {example}', [
+                    $sms .= Yii::t('sms', 'To set your city: Send {message}\nEx: {example}', [
                         'message' => 'TUP CITY <city-name>',
                         'example' => 'TUP CITY ISLAMABAD',
 
                     ]);
                     break;
                 case 'help':
-                    $sms .= Yii::t('sms', 'Get help on command by {message}\nEx: {example}', [
-                        'message' => 'TUP HELP <commands>',
+                    $sms .= Yii::t('sms', 'To get help on command: Send {message}\nEx: {example}', [
+                        'message' => 'TUP HELP <command>',
                         'example' => 'TUP HELP SUB',
 
                     ]);
                     break;
             }
-            $sms .= "\n";
+            $sms .= "\n\n";
 
         }
         SmsSender::queueSend($msisdn, $sms);
