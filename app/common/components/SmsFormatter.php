@@ -43,7 +43,7 @@ class SmsFormatter extends Formatter
             }
         }
         $sms .= Yii::t('sms', 'Report traffic problems by sending {message} on {shortCode}', [
-            'message' => 'TUP REPORT <congestion/accident> AT <location>',
+            'message' => 'TUP REPORT <congestion/accident/blockade/construction> AT <location>',
             'shortCode' => Yii::$app->params['smsShortCode'],
         ]);
 
@@ -58,8 +58,8 @@ class SmsFormatter extends Formatter
             case 1: // Construction
                 $name = Yii::t('sms', "Construction");
                 break;
-            case 2: // Event
-                $name = Yii::t('sms', "Event");
+            case 2: // Blockade
+                $name = Yii::t('sms', "Blockade");
                 break;
             case 3: // Congestion/Flow
                 $name = Yii::t('sms', "Congestion");

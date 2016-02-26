@@ -474,9 +474,9 @@ class SmsController extends Controller
                         $incident->type = 1;
                         $incidentText = 'construction';
                         break;
-                    case 'event':
+                    case 'blockade':
                         $incident->type = 2;
-                        $incidentText = 'event';
+                        $incidentText = 'blockade';
                         break;
                     case 'congestion':
                         $incident->type = 3;
@@ -492,8 +492,6 @@ class SmsController extends Controller
                 }
 
                 $incidentLocation = Yii::$app->googleMaps->geocode($location);
-
-                Yii::info(print_r($incidentLocation, true));
 
                 if (count($incidentLocation) > 0) {
 
@@ -529,7 +527,7 @@ class SmsController extends Controller
                         ]);
                         $sms .= "\n";
                         $sms .= Yii::t('sms', 'Please change your city by sending {message} to {shortCode}',[
-                            'message' => 'TUP CITY city-name',
+                            'message' => 'TUP CITY <city-name>',
                             'shortCode' => Yii::$app->params['smsShortCode'],
                         ]);
 
