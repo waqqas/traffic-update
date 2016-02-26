@@ -14,24 +14,24 @@ class GoogleMaps extends Component
 
     public $apiKey;
 
-    public $region;
     public $language;
 
     public function init()
     {
         parent::init();
 
-        $this->region = Yii::$app->params['defaultLocation'];
         $this->language = Yii::$app->language;
     }
 
-    public function geocode($address)
+    public function geocode($address, $region = null)
     {
+
+        if( $region == null ) $region = Yii::$app->params['defaultLocation'];
 
         $query = http_build_query([
             'key' => $this->apiKey,
             'address' => $address,
-            'region' => $this->region,
+            'region' => $region,
             'language' => $this->language,
         ]);
 
@@ -53,14 +53,15 @@ class GoogleMaps extends Component
 
     }
 
-    public function route($from, $to)
+    public function route($from, $to, $region = null)
     {
+        if( $region == null ) $region = Yii::$app->params['defaultLocation'];
 
         $query = http_build_query([
             'key' => $this->apiKey,
             'origin' => $from,
             'destination' => $to,
-            'region' => $this->region,
+            'region' => $region,
             'language' => $this->language,
             'mode' => 'driving',
             'units' => 'metric',

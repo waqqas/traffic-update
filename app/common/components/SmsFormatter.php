@@ -24,25 +24,36 @@ class SmsFormatter extends Formatter
     {
         $sms = $prefix;
 
-        /** @var \common\models\Incident $incident */
-        foreach ($incidents as $incident) {
+        if (count($incidents) == 0) {
+            $sms .= Yii::t('sms', 'There are no reported incidents.');
+            $sms .= "\n";
+        } else {
+
+            /** @var \common\models\Incident $incident */
+            foreach ($incidents as $incident) {
 //            Yii::info("incident: ". print_r($incident, true));
 
-            $incLine = Yii::t('sms', '{id}- {incident} at {location}. Delay: {delay} minutes', [
+                $incLine = Yii::t('sms', '{id}- {incident} at {location}. Delay: {delay} minutes', [
                     'id' => $incident->id,
                     'incident' => $this->getIncident($incident),
                     'location' => Yii::t('sms', $incident->location),
                     'delay' => $incident->delayFromFreeFlow
                 ]);
-            $sms .= $incLine . "\n\n";
+                $sms .= $incLine . "\n";
+            }
         }
+        $sms .= Yii::t('sms', 'Report traffic problems by sending {message} on {shortCode}', [
+            'message' => 'TUP REPORT <congestion/accident> AT <location>',
+            'shortCode' => Yii::$app->params['smsShortCode'],
+        ]);
 
         return $sms;
     }
 
 
     /** @param \common\models\Incident $incident */
-    private function getIncident($incident){
+    private function getIncident($incident)
+    {
         switch ($incident->type) {
             case 1: // Construction
                 $name = Yii::t('sms', "Construction");

@@ -39,6 +39,17 @@ class SmsController extends Controller
         }
 
         Yii::$app->language = $language;
+
+        Yii::$app->setComponents([
+           'smsUser' => [
+               'class' => 'StdClass'
+           ]
+        ]);
+
+        $city = Yii::$app->settings->get("$msisdn.city") != null? Yii::$app->settings->get("$msisdn.city") : Yii::$app->params['defaultLocation'];
+
+        Yii::$app->smsUser->city = $city;
+
     }
 
     public function actionMo(array $ids)
@@ -48,7 +59,7 @@ class SmsController extends Controller
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
 //                Yii::info(print_r($mo->text,true));
-                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|lang|sub|now|unsub|report]*)(.*)/i";
+                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|lang|sub|now|unsub|report|city]*)(.*)/i";
 
 //                Yii::info('regex: '. $regex);
 
@@ -69,7 +80,7 @@ class SmsController extends Controller
 
                     Yii::info('command: ' . $command);
 
-                    if (in_array($command, ['sub', 'lang', 'route', 'now', 'unsub', 'report'])) {
+                    if (in_array($command, ['sub', 'lang', 'route', 'now', 'unsub', 'report', 'city'])) {
                         $runCommand = implode(' ', [
                             'sms/' . $command,
                             $mo->msisdn,
@@ -157,10 +168,11 @@ class SmsController extends Controller
             $pmTime = date('G:i', strtotime($commandParams[2] . ":" . $commandParams[3] . "pm"));
 
 
+            // TODO: change city in command when user changes city
             $command = implode(' ', [
                 'sms/now',
                 $msisdn,
-                "islamabad",        // TODO: get user's preferred location
+                Yii::$app->smsUser->city
             ]);
 
             Yii::info("SMS sending times: " . $amTime . " and " . $pmTime);
@@ -256,7 +268,7 @@ class SmsController extends Controller
 
             $commandParams = array_map('trim', $commandParams);
 
-            $location = Yii::$app->params['defaultLocation'];
+            $location = Yii::$app->smsUser->city;
 
             // one optional parameter to route command
             if (count($commandParams) == 1) {
@@ -288,7 +300,7 @@ class SmsController extends Controller
 
             // Send SMS
 
-            if (!empty($sms) && SmsSender::queueSend($msisdn, $sms)) {
+            if (SmsSender::queueSend($msisdn, $sms)) {
 //                $mo->status = 'processed';
             } else {
 //                $mo->status = 'queue_error';
@@ -318,9 +330,9 @@ class SmsController extends Controller
                 $from = $commandParams[0];
                 $to = $commandParams[2];
 
-                $fromAddresses = Yii::$app->googleMaps->geocode($from);
+                $fromAddresses = Yii::$app->googleMaps->geocode($from, Yii::$app->smsUser->city);
 
-                $toAddresses = Yii::$app->googleMaps->geocode($to);
+                $toAddresses = Yii::$app->googleMaps->geocode($to, Yii::$app->smsUser->city);
 
                 $from = $fromAddresses[0]->geometry->location->lat . "," . $fromAddresses[0]->geometry->location->lng;
                 $to = $toAddresses[0]->geometry->location->lat . "," . $toAddresses[0]->geometry->location->lng;
@@ -426,7 +438,7 @@ class SmsController extends Controller
                         $incidentText = 'unknown event';
                 }
 
-                $incidentLocation = Yii::$app->googleMaps->geocode($location);
+                $incidentLocation = Yii::$app->googleMaps->geocode($location, Yii::$app->smsUser->city);
 
                 if (count($incidentLocation) > 0) {
 
@@ -454,8 +466,7 @@ class SmsController extends Controller
                     ]);
 
                     SmsSender::queueSend($msisdn, $sms);
-                }
-                else{
+                } else {
                     $sms = Yii::t('Sorry, {location} is not a valid location', [
                         'location' => $location,
                     ]);
@@ -463,16 +474,65 @@ class SmsController extends Controller
                     SmsSender::queueSend($msisdn, $sms);
 
                 }
-            }
-            else{
+            } else {
                 $status = Controller::EXIT_CODE_ERROR;
             }
-        }
-        else{
+        } else {
             $status = Controller::EXIT_CODE_ERROR;
         }
 
         return $status;
     }
 
+    public function actionCity($msisdn, $paramString)
+    {
+        $status = Controller::EXIT_CODE_NORMAL;
+
+        $this->loadSettings($msisdn);
+
+        //command has one optional parameter
+        if (preg_match('/(.*)/i', $paramString, $commandParams)) {
+            // remove the all matching
+            array_shift($commandParams);
+
+            $commandParams = array_map('trim', $commandParams);
+
+            if (count($commandParams) > 0) {
+
+                $location = Yii::$app->googleMaps->geocode($commandParams[0]);
+
+                if (count($location) > 0) {
+
+                    $localityFound = null;
+                    foreach ($location[0]->address_components as $address) {
+                        foreach ($address->types as $type) {
+                            if ($type == 'locality')
+                                $localityFound = $address;
+                            break;
+                        }
+                        if ($localityFound != null)
+                            break;
+                    }
+
+                    if ($localityFound) {
+                        Yii::$app->settings->set("$msisdn.city", $localityFound->long_name);
+
+                        $sms = Yii::t('sms', 'You will receive notifications of {city}', [
+                            'city' => Yii::t('sms', $localityFound->long_name),
+                        ]);
+
+                        SmsSender::queueSend($msisdn, $sms);
+
+                    } else {
+                        $status = Controller::EXIT_CODE_ERROR;
+                    }
+
+                } else {
+                    $status = Controller::EXIT_CODE_ERROR;
+                }
+            }
+        }
+
+        return $status;
+    }
 }
