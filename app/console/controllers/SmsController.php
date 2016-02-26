@@ -527,6 +527,11 @@ class SmsController extends Controller
                         $sms = Yii::t('sms', 'Sorry, you can not report in {location}', [
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address),
                         ]);
+                        $sms .= "\n";
+                        $sms .= Yii::t('sms', 'Please change your city by sending {message} to {shortCode}',[
+                            'message' => 'TUP CITY city-name',
+                            'shortCode' => Yii::$app->params['smsShortCode'],
+                        ]);
 
                         SmsSender::queueSend($msisdn, $sms);
                     }
