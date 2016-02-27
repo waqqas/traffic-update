@@ -603,7 +603,7 @@ class SmsController extends Controller
 
         $sms = Yii::t('sms', 'Help Menu:\n');
 
-        if( empty($paramString)) $paramString = 'now';
+        if( empty($paramString)) $paramString = 'now city';
 
         foreach( explode(' ', $paramString) as $command){
             switch(strtolower($command)){

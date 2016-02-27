@@ -11,14 +11,14 @@ use yii\console\Controller;
 
 class LanguageController extends Controller
 {
-    public function actionTranslate(array $translate = [])
+    public function actionTranslate(array $language = [], $category = '')
     {
 
         $langs = Language::findAll([ 'status' => 1]);
 
         foreach($langs as $lang){
             // check if we need to translate it
-            if( in_array($lang->language_id, $translate) && (Yii::$app->language != $lang->language_id) ){
+            if( in_array($lang->language_id, $language) && (Yii::$app->language != $lang->language_id) ){
                 Yii::info('Translating: ' . $lang->language_id);
 
                 $alreadyTranslated = LanguageTranslate::find()->select(['id'])->where([
@@ -30,9 +30,17 @@ class LanguageController extends Controller
                 }, $alreadyTranslated);
 
                 // find all messages to be translated
-                $sourceMsgs = LanguageSource::find()->where([
+                $query = LanguageSource::find()->where([
                     'not in', 'id', $alreadyTranslated
-                ])->all();
+                ]);
+
+                if( !empty($category) ){
+                    $query  = $query->andWhere([
+                       'category' => $category,
+                    ]);
+                }
+
+                $sourceMsgs = $query->all();
 
                 $source = substr(Yii::$app->sourceLanguage, 0, strpos(Yii::$app->sourceLanguage, '-'));
 

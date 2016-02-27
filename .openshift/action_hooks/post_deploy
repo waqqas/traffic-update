@@ -24,7 +24,7 @@ php $OPENSHIFT_DATA_DIR/composer.phar install
 ./yii translate/scan
 ./yii translate/optimize
 
-./yii language/translate ur-PK
+./yii language/translate ur-PK sms
 
 # flush cache so that translations are retrieved from DB
  ./yii cache/flush cache --interactive=0
