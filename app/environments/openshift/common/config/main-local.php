@@ -42,6 +42,10 @@ return [
         ],
         'translate' => [
             'key' => 'AIzaSyAzaE9evW4DocDLJ105k9YsnTYJuZ2LI4s',
-        ]
+        ],
+        'ga' => [
+            'trackingId' => 'UA-73119238-3',
+            'clientId' => '5edd66fc-c3ae-4ff8-92a4-484aaec2085d',
+        ],
     ],
 ];

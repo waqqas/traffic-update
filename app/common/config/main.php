@@ -76,5 +76,12 @@ return [
                 $event->sender->createCommand("SET time_zone = '$timeZone'")->execute();
             }
         ],
+        'ga' => [
+            'class' => 'common\components\GoogleAnalytics',
+        ],
+        'phone' => [
+            'class' => 'common\components\PhoneNumberComponent',
+
+        ],
     ],
 ];

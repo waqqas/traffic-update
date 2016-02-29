@@ -105,6 +105,7 @@ class SmsController extends Controller
         } else {
             Yii::$app->smsUser->location = null;
         }
+        Yii::$app->smsUser->phoneNumber = $msisdn;
 
 
     }
@@ -115,6 +116,7 @@ class SmsController extends Controller
             /** @var \common\models\Smsmo $mo */
             $mo = Smsmo::findOne(['id' => $id]);
             if ($mo) {
+
 //                Yii::info(print_r($mo->text,true));
                 $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|language|sub|now|unsub|report|city|help]*)(.*)/i";
 
@@ -138,6 +140,17 @@ class SmsController extends Controller
                     Yii::info('command: ' . $command);
 
                     if (in_array($command, ['sub', 'language', 'route', 'now', 'unsub', 'report', 'city', 'help'])) {
+
+                        /** @var \libphonenumber\PhoneNumber $phone */
+                        $phone = Yii::$app->phone->parse($mo->msisdn, 'PK');
+
+                        Yii::$app->ga->track([
+                            'ec' => 'sms',
+                            'ea' => $command,
+                            'uid' => $mo->msisdn,
+                            'geoid' => Yii::$app->phone->getRegionCodeForNumber($phone),
+                        ]);
+
                         $runCommand = implode(' ', [
                             'sms/' . $command,
                             $mo->msisdn,

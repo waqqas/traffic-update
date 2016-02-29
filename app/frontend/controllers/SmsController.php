@@ -1,7 +1,9 @@
 <?php
 namespace frontend\controllers;
 
+use libphonenumber\PhoneNumberFormat;
 use Yii;
+use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use common\models\Smsmo;
 use common\models\Smsmt;
@@ -16,14 +18,23 @@ class SmsController extends Controller
 
         $mo = new Smsmo();
 
-        $mo->msisdn = Yii::$app->request->get('msisdn', '');
-        $mo->operator = Yii::$app->request->get('operator', '');
-        $mo->text = Yii::$app->request->get('text', '');
-        $mo->status = 'received';
+        /** @var \libphonenumber\PhoneNumber $phone */
+        $phone = Yii::$app->phone->parse(Yii::$app->request->get('msisdn', ''), 'PK');
 
-        $mo->save();
+        if($phone != null) {
 
-        Yii::$app->consoleRunner->run('sms/mo ' . $mo->id );
+            $mo->msisdn = Yii::$app->phone->format($phone, PhoneNumberFormat::E164);
+            $mo->operator = Yii::$app->request->get('operator', '');
+            $mo->text = Yii::$app->request->get('text', '');
+            $mo->status = 'received';
+
+            $mo->save();
+
+            Yii::$app->consoleRunner->run('sms/mo ' . $mo->id);
+        }
+        else{
+            throw new BadRequestHttpException();
+        }
 
     }
 
