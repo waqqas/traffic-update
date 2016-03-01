@@ -12,11 +12,10 @@ class SessionController extends Controller{
 
         $expiryTime = Yii::$app->session->expirySeconds;
 
-        $query = Session::find()->where(['<', 'updated_at', time() - $expiryTime]);
+        $sessionDeleted = Session::deleteAll(['<', 'updated_at', time() - $expiryTime]);
 
-        foreach($query->all() as $expiredSession){
-            $expiredSession->delete();
-        }
+        Yii::info('Number of sessions deleted:' . $sessionDeleted);
+
 
         return Controller::EXIT_CODE_NORMAL;
     }
