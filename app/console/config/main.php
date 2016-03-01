@@ -21,6 +21,9 @@ return [
                 ],
             ],
         ],
+        'session' => [
+            'class' => 'common\components\sms\Session',
+        ]
     ],
     'params' => $params,
 ];

@@ -6,6 +6,7 @@ namespace console\controllers;
 use common\components\SmsSender;
 use common\models\Incident;
 use common\models\Language;
+use common\models\Session;
 use pheme\settings\models\Setting;
 use Yii;
 use yii\console\Controller;
@@ -15,6 +16,16 @@ use yii\data\ActiveDataProvider;
 
 class SmsController extends Controller
 {
+
+    /**
+     * @var string Phone number in international format
+     */
+    public $phoneNumber;
+
+    public function options($actionID)
+    {
+        return ['phoneNumber'];
+    }
 
     private function getUserCity()
     {
@@ -28,10 +39,10 @@ class SmsController extends Controller
 
     private function getPropByType($prop, $type)
     {
-        if( !isset(Yii::$app->smsUser->location)){
+        if (!isset(Yii::$app->smsUser->location)) {
             $value = null;
 
-            switch($type){
+            switch ($type) {
                 case 'locality':
                     $value = Yii::$app->params['defaultCity'];
                     break;
@@ -69,18 +80,12 @@ class SmsController extends Controller
         return $match;
     }
 
-    private function loadSettings($msisdn)
+    private function loadSettings()
     {
-
-        // set user's preferred language as application language
-
-//        $language = Yii::$app->settings->get("$msisdn.language");
-
-
         // @var \pheme\settings\models\Setting $setting
         $setting = Setting::findOne([
             'key' => 'language',
-            'section' => $msisdn,
+            'section' => $this->phoneNumber,
             'active' => 1,
         ]);
 
@@ -98,79 +103,102 @@ class SmsController extends Controller
             ]
         ]);
 
-        if (($location = Yii::$app->settings->get("$msisdn.location")) != null) {
+        if (($location = Yii::$app->settings->get($this->phoneNumber . ".location")) != null) {
             $location = unserialize(base64_decode($location));
 
             Yii::$app->smsUser->location = $location;
         } else {
             Yii::$app->smsUser->location = null;
         }
-        Yii::$app->smsUser->phoneNumber = $msisdn;
+        Yii::$app->smsUser->phoneNumber = $this->phoneNumber;
+
+        Yii::$app->session->open();
 
 
     }
 
-    public function actionMo(array $ids)
+    public function beforeAction($action)
     {
-        foreach ($ids as $id) {
-            /** @var \common\models\Smsmo $mo */
-            $mo = Smsmo::findOne(['id' => $id]);
-            if ($mo) {
+        $this->loadSettings();
+        return parent::beforeAction($action);
+    }
 
-//                Yii::info(print_r($mo->text,true));
-                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|language|sub|now|unsub|report|city|help]*)(.*)/i";
+    public function afterAction($action, $result)
+    {
+        Yii::$app->session->close();
+        return parent::afterAction($action, $result);
+    }
 
-//                Yii::info('regex: '. $regex);
+    public static function getCommand($command, $phoneNumber, $params = [])
+    {
+        // convert string to array
+        if( !is_array($params)){
+            $params = [$params];
+        }
 
-                if (preg_match($regex, $mo->text, $output_array)) {
+        return implode(' ', array_merge([
+            'sms/' . $command,
+        ],
+            $params,
+            [
+                "--phoneNumber=" . $phoneNumber,
+            ]
+        ));
 
-                    // remove the all matching
-                    array_shift($output_array);
+    }
 
-                    // remove leading and trailing spaces
-                    $output_array = array_map('trim', $output_array);
+    public function actionMo($id)
+    {
+        /** @var \common\models\Smsmo $mo */
+        $mo = Smsmo::findOne(['id' => $id]);
+        if ($mo) {
 
-                    $command = strtolower(array_shift($output_array));
+            $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|language|sub|now|unsub|report|city|help]*)(.*)/i";
 
-                    // default command
-                    if (empty($command)) {
-                        $command = 'help';
-                    }
+            if (preg_match($regex, $mo->text, $output_array)) {
 
-                    Yii::info('command: ' . $command);
+                // remove the all matching
+                array_shift($output_array);
 
-                    if (in_array($command, ['sub', 'language', 'route', 'now', 'unsub', 'report', 'city', 'help'])) {
+                // remove leading and trailing spaces
+                $output_array = array_map('trim', $output_array);
 
-                        /** @var \libphonenumber\PhoneNumber $phone */
-                        $phone = Yii::$app->phone->parse($mo->msisdn, 'PK');
+                $command = strtolower(array_shift($output_array));
 
-                        Yii::$app->ga->track([
-                            'ec' => 'sms',
-                            'ea' => $command,
-                            'uid' => $mo->msisdn,
-                            'geoid' => Yii::$app->phone->getRegionCodeForNumber($phone),
-                        ]);
-
-                        $runCommand = implode(' ', [
-                            'sms/' . $command,
-                            $mo->msisdn,
-                            '"' . $output_array[0] . '"',
-                        ]);
-
-                        Yii::$app->consoleRunner->run($runCommand);
-
-                        $mo->status = 'processed';
-
-                    } else {
-                        //TODO send possible formats SMS
-                        $mo->status = 'invalid';
-
-                    }
-                } else {
-                    $mo->status = 'invalid';
+                // default command
+                if (empty($command)) {
+                    $command = 'help';
                 }
-                $mo->save();
+
+                Yii::info('command: ' . $command);
+
+                if (in_array($command, ['sub', 'language', 'route', 'now', 'unsub', 'report', 'city', 'help'])) {
+
+                    /** @var \libphonenumber\PhoneNumber $phone */
+                    $phone = Yii::$app->phone->parse($mo->msisdn, 'PK');
+
+                    Yii::$app->ga->track([
+                        'ec' => 'sms',
+                        'ea' => $command,
+                        'uid' => $mo->msisdn,
+                        'geoid' => Yii::$app->phone->getRegionCodeForNumber($phone),
+                    ]);
+
+                    $runCommand = self::getCommand($command, $mo->msisdn, '"' . $output_array[0] . '"');
+
+                    Yii::$app->consoleRunner->run($runCommand);
+
+                    $mo->status = 'processed';
+
+                } else {
+                    //TODO send possible formats SMS
+                    $mo->status = 'invalid';
+
+                }
+            } else {
+                $mo->status = 'invalid';
             }
+            $mo->save();
         }
         return Controller::EXIT_CODE_NORMAL;
     }
@@ -207,11 +235,11 @@ class SmsController extends Controller
         }
     }
 
-    public function actionSub($msisdn, $paramString)
+    public function actionSub($paramString)
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
-        $this->loadSettings($msisdn);
+        $this->loadSettings($this->phoneNumber);
 
         if (preg_match('/(0?\d*|1*[0-2]*):*(0\d*|[0-5]*\d*)\s*(0?\d*|1*[0-2]*):*(0\d*|[0-5]*\d*)/i', $paramString, $commandParams)) {
             // remove the all matching
@@ -238,12 +266,7 @@ class SmsController extends Controller
             $pmTime = date('G:i', strtotime($commandParams[2] . ":" . $commandParams[3] . "pm"));
 
 
-            // TODO: change city in command when user changes city
-            $command = implode(' ', [
-                'sms/now',
-                $msisdn,
-                $this->getUserCity(),
-            ]);
+            $command = self::getCommand( 'now', $this->phoneNumber);
 
             Yii::info("SMS sending times: " . $amTime . " and " . $pmTime);
 
@@ -255,7 +278,7 @@ class SmsController extends Controller
 
             $events = serialize($schedule->getEvents());
 
-            Yii::$app->settings->set("$msisdn.events", base64_encode($events));
+            Yii::$app->settings->set($this->phoneNumber . ".events", base64_encode($events));
 
             $sms = Yii::t('sms', 'You will receive SMS daily at {amTime} and {pmTime}', [
                 'amTime' => $amTime,
@@ -269,18 +292,16 @@ class SmsController extends Controller
                 'shortCode' => Yii::$app->params['smsShortCode'],
             ]);
 
-            SmsSender::queueSend($msisdn, $sms);
+            SmsSender::queueSend($this->phoneNumber, $sms);
 
         }
 
         return $status;
     }
 
-    public function actionLanguage($msisdn, $paramString)
+    public function actionLanguage($paramString)
     {
         $status = Controller::EXIT_CODE_NORMAL;
-
-        $this->loadSettings($msisdn);
 
         if (preg_match('/(.*)/i', $paramString, $commandParams)) {
             // remove the all matching
@@ -305,7 +326,7 @@ class SmsController extends Controller
                 ]);
 
                 if ($lang) {
-                    Yii::$app->settings->set("$msisdn.language", $lang->language_id);
+                    Yii::$app->settings->set($this->phoneNumber . ".language", $lang->language_id);
 
                     Yii::$app->language = $lang->language_id;
 
@@ -313,7 +334,7 @@ class SmsController extends Controller
                         'language' => $lang->name,
                     ]);
 
-                    SmsSender::queueSend($msisdn, $sms);
+                    SmsSender::queueSend($this->phoneNumber, $sms);
                 } else {
                     //TODO: send error SMS
                     $status = Controller::EXIT_CODE_ERROR;
@@ -325,11 +346,9 @@ class SmsController extends Controller
         }
     }
 
-    public function actionNow($msisdn, $paramString)
+    public function actionNow($paramString)
     {
         $status = Controller::EXIT_CODE_NORMAL;
-
-        $this->loadSettings($msisdn);
 
         //command has one optional parameter
         if (preg_match('/(.*)/i', $paramString, $commandParams)) {
@@ -339,12 +358,10 @@ class SmsController extends Controller
             $commandParams = array_map('trim', $commandParams);
 
 
-
             // one optional parameter to route command
             if (count($commandParams) == 1) {
                 $location = $commandParams[0];
-            }
-            else{
+            } else {
                 $location = $this->getUserCity();
             }
 
@@ -371,18 +388,16 @@ class SmsController extends Controller
 
             Yii::info("sms:" . $sms);
 
-            SmsSender::queueSend($msisdn, $sms);
+            SmsSender::queueSend($this->phoneNumber, $sms);
 
         }
 
         return $status;
     }
 
-    public function actionRoute($msisdn, $paramString)
+    public function actionRoute($paramString)
     {
         $status = Controller::EXIT_CODE_NORMAL;
-
-        $this->loadSettings($msisdn);
 
         // route command and three parameters
         if (preg_match('/(.*)( to )(.*)/i', $paramString, $commandParams)) {
@@ -415,7 +430,7 @@ class SmsController extends Controller
 
                     Yii::info($sms);
 
-                    SmsSender::queueSend($msisdn, $sms);
+                    SmsSender::queueSend($this->phoneNumber, $sms);
                 } else {
                     //TODO: send sms that route could not be found
                     $status = Controller::EXIT_CODE_ERROR;
@@ -435,29 +450,25 @@ class SmsController extends Controller
         return $status;
     }
 
-    public function actionUnsub($msisdn, $paramString)
+    public function actionUnsub($paramString)
     {
         $status = Controller::EXIT_CODE_NORMAL;
-
-        $this->loadSettings($msisdn);
 
         /** @var \pheme\settings\components\Settings $settings */
         $settings = Yii::$app->settings;
 
-        $settings->delete("$msisdn.events");
+        $settings->delete($this->phoneNumber . ".events");
 
         $sms = Yii::t('sms', 'You will not receive daily SMS');
 
-        SmsSender::queueSend($msisdn, $sms);
+        SmsSender::queueSend($this->phoneNumber, $sms);
 
         return $status;
     }
 
-    public function actionReport($msisdn, $paramString)
+    public function actionReport($paramString)
     {
         $status = Controller::EXIT_CODE_NORMAL;
-
-        $this->loadSettings($msisdn);
 
         // route command and three parameters
         if (preg_match('/(.*)( at )(.*)/i', $paramString, $commandParams)) {
@@ -524,18 +535,18 @@ class SmsController extends Controller
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address)
                         ]);
 
-                        SmsSender::queueSend($msisdn, $sms);
+                        SmsSender::queueSend($this->phoneNumber, $sms);
                     } else {
                         $sms = Yii::t('sms', 'Sorry, you can not report in {location}', [
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address),
                         ]);
                         $sms .= "\n";
-                        $sms .= Yii::t('sms', 'Please change your city by sending {message} to {shortCode}',[
+                        $sms .= Yii::t('sms', 'Please change your city by sending {message} to {shortCode}', [
                             'message' => 'TUP CITY <city-name>',
                             'shortCode' => Yii::$app->params['smsShortCode'],
                         ]);
 
-                        SmsSender::queueSend($msisdn, $sms);
+                        SmsSender::queueSend($this->phoneNumber, $sms);
                     }
 
                 } else {
@@ -543,7 +554,7 @@ class SmsController extends Controller
                         'location' => $location,
                     ]);
 
-                    SmsSender::queueSend($msisdn, $sms);
+                    SmsSender::queueSend($this->phoneNumber, $sms);
 
                 }
             } else {
@@ -556,11 +567,9 @@ class SmsController extends Controller
         return $status;
     }
 
-    public function actionCity($msisdn, $paramString)
+    public function actionCity($paramString)
     {
         $status = Controller::EXIT_CODE_NORMAL;
-
-        $this->loadSettings($msisdn);
 
         //command has one optional parameter
         if (preg_match('/(.*)/i', $paramString, $commandParams)) {
@@ -587,13 +596,13 @@ class SmsController extends Controller
                     }
 
                     if ($localityFound) {
-                        Yii::$app->settings->set("$msisdn.location", base64_encode(serialize($localityFound)));
+                        Yii::$app->settings->set($this->phoneNumber . ".location", base64_encode(serialize($localityFound)));
 
                         $sms = Yii::t('sms', 'You will receive notifications of {city}', [
                             'city' => Yii::t('sms', $localityFound->long_name),
                         ]);
 
-                        SmsSender::queueSend($msisdn, $sms);
+                        SmsSender::queueSend($this->phoneNumber, $sms);
 
                     } else {
                         $status = Controller::EXIT_CODE_ERROR;
@@ -608,18 +617,16 @@ class SmsController extends Controller
         return $status;
     }
 
-    public function actionHelp($msisdn, $paramString)
+    public function actionHelp($paramString)
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
-        $this->loadSettings($msisdn);
-
         $sms = Yii::t('sms', 'Help Menu:\n');
 
-        if( empty($paramString)) $paramString = 'now city';
+        if (empty($paramString)) $paramString = 'now city';
 
-        foreach( explode(' ', $paramString) as $command){
-            switch(strtolower($command)){
+        foreach (explode(' ', $paramString) as $command) {
+            switch (strtolower($command)) {
                 case 'language':
                     $sms .= Yii::t('sms', 'To select language: Send {message}\nEx: {example}', [
                         'message' => 'TUP LANGUAGE <urdu/english> ',
@@ -666,7 +673,7 @@ class SmsController extends Controller
             $sms .= "\n\n";
 
         }
-        SmsSender::queueSend($msisdn, $sms);
+        SmsSender::queueSend($this->phoneNumber, $sms);
 
         return $status;
     }

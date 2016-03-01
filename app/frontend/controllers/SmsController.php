@@ -30,7 +30,9 @@ class SmsController extends Controller
 
             $mo->save();
 
-            Yii::$app->consoleRunner->run('sms/mo ' . $mo->id);
+            $command = \console\controllers\SmsController::getCommand('mo', $mo->msisdn, $mo->id);
+
+            Yii::$app->consoleRunner->run($command);
         }
         else{
             throw new BadRequestHttpException();
@@ -51,7 +53,10 @@ class SmsController extends Controller
             $mt->text = $text;
 
             if($mt->save() ){
-                Yii::$app->consoleRunner->run('sms/mt '. $mt->id);
+                $command = \console\controllers\SmsController::getCommand('mt', $to, $mt->id);
+
+                Yii::$app->consoleRunner->run($command);
+
             }
             else{
                 throw new ServerErrorHttpException();
