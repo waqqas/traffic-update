@@ -185,7 +185,7 @@ class SmsController extends Controller
         $mo = Smsmo::findOne(['id' => $id]);
         if ($mo) {
 
-            $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|language|sub|now|unsub|report|city|help]*)(.*)/i";
+            $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|language|daily|now|stop|report|city|help]*)(.*)/i";
 
             if (preg_match($regex, $mo->text, $output_array)) {
 
@@ -204,7 +204,7 @@ class SmsController extends Controller
 
                 Yii::info('command: ' . $command);
 
-                if (in_array($command, ['sub', 'language', 'route', 'now', 'unsub', 'report', 'city', 'help'])) {
+                if (in_array($command, ['daily', 'language', 'route', 'now', 'stop', 'report', 'city', 'help'])) {
 
                     /** @var \libphonenumber\PhoneNumber $phone */
                     $phone = Yii::$app->phone->parse($mo->msisdn, 'PK');
@@ -267,7 +267,7 @@ class SmsController extends Controller
         }
     }
 
-    public function actionSub($paramString)
+    public function actionDaily($paramString)
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
@@ -316,8 +316,8 @@ class SmsController extends Controller
 
             $sms .= "\n";
 
-            $sms .= Yii::t('sms', 'Send {message} at {shortCode} to unsubscribe', [
-                'message' => Yii::$app->params['smsKeyword'] . " UNSUB",
+            $sms .= Yii::t('sms', 'Send {message} at {shortCode} to stop daily notifications', [
+                'message' => Yii::$app->params['smsKeyword'] . " STOP",
                 'shortCode' => Yii::$app->params['smsShortCode'],
             ]);
 
@@ -481,7 +481,7 @@ class SmsController extends Controller
         return $status;
     }
 
-    public function actionUnsub($paramString)
+    public function actionStop($paramString = '')
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
@@ -660,15 +660,15 @@ class SmsController extends Controller
         foreach (explode(' ', $paramString) as $command) {
             switch (strtolower($command)) {
                 case 'language':
-                    $sms .= Yii::t('sms', 'To select language: Send {message}\nEx: {example}', [
+                    $sms .= Yii::t('sms', 'To select language, send {message}\nEx: {example}', [
                         'message' => 'TUP LANGUAGE <urdu/english> ',
                         'example' => 'TUP LANGUAGE URDU',
                     ]);
                     break;
-                case 'sub':
-                    $sms .= Yii::t('sms', 'To subscribe to daily notifications: Send {message}\nEx: {example}', [
-                        'message' => 'TUP SUB <AM time> <PM time>',
-                        'example' => 'TUP SUB 8:30 5:00'
+                case 'daily':
+                    $sms .= Yii::t('sms', 'To get daily notifications, send {message}\nEx: {example}', [
+                        'message' => 'TUP DAILY <AM time> <PM time>',
+                        'example' => 'TUP DAILY 8:30 5:30'
                     ]);
                     break;
                 case 'now':
@@ -676,13 +676,13 @@ class SmsController extends Controller
                         'message' => 'TUP NOW',
                     ]);
                     break;
-                case 'unsub':
-                    $sms .= Yii::t('sms', 'To unsubscribe from daily notifications: Send {message}', [
-                        'message' => 'TUP UNSUB'
+                case 'stop':
+                    $sms .= Yii::t('sms', 'To stop receiving daily notifications, send {message}', [
+                        'message' => 'TUP STOP'
                     ]);
                     break;
                 case 'report':
-                    $sms .= Yii::t('sms', 'To report traffic problem: Send {message}\nEx: {example}', [
+                    $sms .= Yii::t('sms', 'To report traffic problem, send {message}\nEx: {example}', [
                         'message' => 'TUP REPORT <congestion/accident/blockade/construction> AT <location>',
                         'example' => 'TUP REPORT accident AT Faizabad Interchange',
                     ]);
@@ -697,7 +697,7 @@ class SmsController extends Controller
                 case 'help':
                     $sms .= Yii::t('sms', 'To get help on command: Send {message}\nEx: {example}', [
                         'message' => 'TUP HELP <command>',
-                        'example' => 'TUP HELP SUB',
+                        'example' => 'TUP HELP REPORT',
 
                     ]);
                     break;
