@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "8d2d7a410be3787a7768505b1da2aa03",
-    "content-hash": "6d415a7d7d4d14389158d1747a1fe199",
+    "hash": "c8d33a19d5541b087baa2f0382ce43d7",
+    "content-hash": "6a99c6a28dff29925152b91c03d756e4",
     "packages": [
         {
             "name": "bower-asset/bootstrap",
@@ -695,27 +695,34 @@
             "time": "2015-09-27 18:46:32"
         },
         {
-            "name": "pheme/yii2-settings",
-            "version": "0.3",
+            "name": "raoul2000/yii2-workflow",
+            "version": "1.0.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/phemellc/yii2-settings.git",
-                "reference": "8c81f472d5342f9be5a842e62f96a35211c1bc75"
+                "url": "https://github.com/raoul2000/yii2-workflow.git",
+                "reference": "803ab32ed33bfa1aa09bbed59b816b942e4d9ab3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phemellc/yii2-settings/zipball/8c81f472d5342f9be5a842e62f96a35211c1bc75",
-                "reference": "8c81f472d5342f9be5a842e62f96a35211c1bc75",
+                "url": "https://api.github.com/repos/raoul2000/yii2-workflow/zipball/803ab32ed33bfa1aa09bbed59b816b942e4d9ab3",
+                "reference": "803ab32ed33bfa1aa09bbed59b816b942e4d9ab3",
                 "shasum": ""
             },
             "require": {
-                "pheme/yii2-toggle-column": "*",
-                "yiisoft/yii2": ">=2.0.6"
+                "php": ">=5.4.0",
+                "yiisoft/yii2": "*"
+            },
+            "require-dev": {
+                "codeception/codeception": "2.0.9",
+                "codeception/specify": "*",
+                "codeception/verify": "*",
+                "myclabs/deep-copy": "1.3.1",
+                "yiisoft/yii2-codeception": "*"
             },
             "type": "yii2-extension",
             "autoload": {
                 "psr-4": {
-                    "pheme\\settings\\": ""
+                    "raoul2000\\workflow\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -724,59 +731,18 @@
             ],
             "authors": [
                 {
-                    "name": "Aris Karageorgos",
-                    "email": "aris@phe.me"
+                    "name": "Raoul",
+                    "email": "raoul.boulard@gmail.com",
+                    "homepage": "https://github.com/raoul2000/yii2-workflow"
                 }
             ],
-            "description": "Yii2 Database settings",
+            "description": "A simple workflow engine for Yii2",
+            "homepage": "http://raoul2000.github.io/yii2-workflow/guide-README.html",
             "keywords": [
-                "Settings",
-                "config",
+                "workflow",
                 "yii2"
             ],
-            "time": "2015-12-16 03:25:55"
-        },
-        {
-            "name": "pheme/yii2-toggle-column",
-            "version": "0.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/phemellc/yii2-toggle-column.git",
-                "reference": "6fb846a86f76234c63b3d475dc70dd59022718c1"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/phemellc/yii2-toggle-column/zipball/6fb846a86f76234c63b3d475dc70dd59022718c1",
-                "reference": "6fb846a86f76234c63b3d475dc70dd59022718c1",
-                "shasum": ""
-            },
-            "require": {
-                "yiisoft/yii2": "*"
-            },
-            "type": "yii2-extension",
-            "autoload": {
-                "psr-4": {
-                    "\\pheme\\grid\\": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Aris Karageorgos",
-                    "email": "aris@phe.me"
-                }
-            ],
-            "description": "Provides a toggle data column and action",
-            "keywords": [
-                "column",
-                "extension",
-                "toggle",
-                "yii2"
-            ],
-            "time": "2014-10-12 15:54:14"
+            "time": "2015-12-19 11:24:47"
         },
         {
             "name": "richweber/yii2-google-translate-api",

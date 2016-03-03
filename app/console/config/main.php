@@ -22,7 +22,12 @@ return [
             ],
         ],
         'session' => [
-            'class' => 'common\components\sms\Session',
+            'class' => 'yii\web\DbSession',
+             'sessionTable' => '{{%smssession}}',
+        ],
+        'user' => [
+            'class' => 'common\components\sms\User',
+            'identityClass' => 'common\models\User',
         ]
     ],
     'params' => $params,

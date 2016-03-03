@@ -71,6 +71,10 @@ class User extends ActiveRecord implements IdentityInterface
         throw new NotSupportedException('"findIdentityByAccessToken" is not implemented.');
     }
 
+    public static function findIdentityByPhoneNumber($phoneNum){
+        return static::findOne(['username' => $phoneNum, 'status' => self::STATUS_ACTIVE]);
+    }
+
     /**
      * Finds user by username
      *
@@ -184,5 +188,18 @@ class User extends ActiveRecord implements IdentityInterface
     public function removePasswordResetToken()
     {
         $this->password_reset_token = null;
+    }
+
+
+    // AR Relations
+    public function getPreferences()
+    {
+        return $this->hasMany(UserPreference::className(), ['user_id' => 'id'])->inverseOf('user');
+    }
+
+    public function getPreference($name)
+    {
+        return $this->hasOne(UserPreference::className(), ['user_id' => 'id'])->where(['name' => $name]);
+
     }
 }

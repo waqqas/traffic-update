@@ -6,8 +6,7 @@ namespace console\controllers;
 use common\components\SmsSender;
 use common\models\Incident;
 use common\models\Language;
-use common\models\Session;
-use pheme\settings\models\Setting;
+use common\models\User;
 use Yii;
 use yii\console\Controller;
 use common\models\Smsmo;
@@ -16,15 +15,29 @@ use yii\data\ActiveDataProvider;
 
 class SmsController extends Controller
 {
+    /**
+     * @var string JSON encoded string to set $_GET global variable
+     */
+    public $get = '{}';
 
     /**
-     * @var string Phone number in international format
+     * @var string JSON encoded string to set $_POST global variable
      */
-    public $phoneNumber;
+    public $post = '{}';
+
+    /**
+     * @var string JSON encoded string to set $_COOKIE global variable
+     */
+    public $cookie = '{}';
+
+    /**
+     * @var string JSON encoded string to set $_COOKIE global variable
+     */
+    public $session = '{}';
 
     public function options($actionID)
     {
-        return ['phoneNumber'];
+        return ['get', 'post', 'cookie', 'session'];
     }
 
     private function getUserCity()
@@ -39,7 +52,9 @@ class SmsController extends Controller
 
     private function getPropByType($prop, $type)
     {
-        if (!isset(Yii::$app->smsUser->location)) {
+        $location = Yii::$app->user->identity->getPreference('location')->one();
+
+        if (!isset($location)) {
             $value = null;
 
             switch ($type) {
@@ -54,11 +69,12 @@ class SmsController extends Controller
             return $value;
         }
 
-        foreach (Yii::$app->smsUser->location->address_components as $address) {
-            foreach ($address->types as $userType)
+        foreach ($location->address_components as $address) {
+            foreach ($address->types as $userType) {
                 if ($userType == $type) {
                     return $address->{$prop};
                 }
+            }
         }
     }
 
@@ -69,57 +85,63 @@ class SmsController extends Controller
         $userCity = $this->getUserCity();
         foreach ($location->address_components as $address) {
             foreach ($address->types as $type) {
-                if ($type == 'locality' && $address->long_name == $userCity)
+                if ($type == 'locality' && $address->long_name == $userCity) {
                     $match = true;
+                }
                 break;
             }
-            if ($match == true)
+            if ($match == true) {
                 break;
+            }
         }
 
         return $match;
     }
 
-    private function loadSettings()
+    private function createUser($phoneNumber)
     {
-        // @var \pheme\settings\models\Setting $setting
-        $setting = Setting::findOne([
-            'key' => 'language',
-            'section' => $this->phoneNumber,
-            'active' => 1,
-        ]);
-
-        if ($setting == null) {
-            $language = Yii::$app->sourceLanguage;
-        } else {
-            $language = $setting->value;
+        $user = new User();
+        $user->username = $phoneNumber;
+        $user->email = '';
+        $user->setPassword('');
+        $user->generateAuthKey();
+        if ($user->save()) {
+            return $user;
         }
-
-        Yii::$app->language = $language;
-
-        Yii::$app->setComponents([
-            'smsUser' => [
-                'class' => 'StdClass'
-            ]
-        ]);
-
-        if (($location = Yii::$app->settings->get($this->phoneNumber . ".location")) != null) {
-            $location = unserialize(base64_decode($location));
-
-            Yii::$app->smsUser->location = $location;
-        } else {
-            Yii::$app->smsUser->location = null;
-        }
-        Yii::$app->smsUser->phoneNumber = $this->phoneNumber;
-
-        Yii::$app->session->open();
-
+        return null;
 
     }
 
     public function beforeAction($action)
     {
-        $this->loadSettings();
+        $_GET = json_decode($this->get, true);
+        $_POST = json_decode($this->post, true);
+        $_COOKIE = json_decode($this->cookie, true);
+        $_SESSION = json_decode($this->session, true);
+
+        Yii::$app->session->open();
+
+        $phoneNumber = isset($_GET['X-PHONE-NUMBER']) ? $_GET['X-PHONE-NUMBER']: '';
+
+        if(empty($phoneNumber)) return false;
+
+        $identity = User::findIdentityByPhoneNumber($phoneNumber);
+
+        if( !$identity ){
+            $identity = $this->createUser($phoneNumber);
+        }
+        Yii::$app->user->setIdentity($identity);
+
+        // get user's language preference
+        $language = Yii::$app->user->identity->getPreference('language')->one();
+
+        if(!$language)
+            $language = Yii::$app->sourceLanguage;
+        else
+            $language = $language->value;
+
+        Yii::$app->language = $language;
+
         return parent::beforeAction($action);
     }
 
@@ -132,16 +154,26 @@ class SmsController extends Controller
     public static function getCommand($command, $phoneNumber, $params = [])
     {
         // convert string to array
-        if( !is_array($params)){
+        if (is_scalar($params)) {
             $params = [$params];
         }
 
-        return implode(' ', array_merge([
-            'sms/' . $command,
-        ],
+        $get = [
+            'X-PHONE-NUMBER' => $phoneNumber,
+        ];
+
+        $cookie = [
+            'PHPSESSID' => substr($phoneNumber, 1),     // remove + sign
+        ];
+
+        return implode(' ', array_merge(
+            [
+                'sms/' . $command,
+            ],
             $params,
             [
-                "--phoneNumber=" . $phoneNumber,
+                "--get='" . json_encode($get) . "'",
+                "--cookie='" . json_encode($cookie) . "'",
             ]
         ));
 
@@ -239,9 +271,8 @@ class SmsController extends Controller
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
-        $this->loadSettings($this->phoneNumber);
-
-        if (preg_match('/(0?\d*|1*[0-2]*):*(0\d*|[0-5]*\d*)\s*(0?\d*|1*[0-2]*):*(0\d*|[0-5]*\d*)/i', $paramString, $commandParams)) {
+        if (preg_match('/(0?\d*|1*[0-2]*):*(0\d*|[0-5]*\d*)\s*(0?\d*|1*[0-2]*):*(0\d*|[0-5]*\d*)/i', $paramString,
+            $commandParams)) {
             // remove the all matching
             array_shift($commandParams);
 
@@ -266,7 +297,7 @@ class SmsController extends Controller
             $pmTime = date('G:i', strtotime($commandParams[2] . ":" . $commandParams[3] . "pm"));
 
 
-            $command = self::getCommand( 'now', $this->phoneNumber);
+            $command = self::getCommand('now', Yii::$app->user->getPhoneNumber());
 
             Yii::info("SMS sending times: " . $amTime . " and " . $pmTime);
 
@@ -276,9 +307,7 @@ class SmsController extends Controller
             $schedule->command($command)->dailyAt($amTime);
             $schedule->command($command)->dailyAt($pmTime);
 
-            $events = serialize($schedule->getEvents());
-
-            Yii::$app->settings->set($this->phoneNumber . ".events", base64_encode($events));
+            Yii::$app->user->setEvents($schedule->getEvents());
 
             $sms = Yii::t('sms', 'You will receive SMS daily at {amTime} and {pmTime}', [
                 'amTime' => $amTime,
@@ -292,7 +321,7 @@ class SmsController extends Controller
                 'shortCode' => Yii::$app->params['smsShortCode'],
             ]);
 
-            SmsSender::queueSend($this->phoneNumber, $sms);
+            SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
         }
 
@@ -326,7 +355,7 @@ class SmsController extends Controller
                 ]);
 
                 if ($lang) {
-                    Yii::$app->settings->set($this->phoneNumber . ".language", $lang->language_id);
+                    Yii::$app->user->setLanguage($lang->language_id);
 
                     Yii::$app->language = $lang->language_id;
 
@@ -334,7 +363,7 @@ class SmsController extends Controller
                         'language' => $lang->name,
                     ]);
 
-                    SmsSender::queueSend($this->phoneNumber, $sms);
+                    SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
                 } else {
                     //TODO: send error SMS
                     $status = Controller::EXIT_CODE_ERROR;
@@ -372,7 +401,9 @@ class SmsController extends Controller
                     'enabled' => 1,
                 ])
                 ->andWhere([
-                    'and', ['<=', 'startTime', $currentTime], ['>', 'endTime', $currentTime],
+                    'and',
+                    ['<=', 'startTime', $currentTime],
+                    ['>', 'endTime', $currentTime],
                 ])->orderBy(['severity' => SORT_DESC]);
 
             $dataProvider = new ActiveDataProvider([
@@ -388,7 +419,7 @@ class SmsController extends Controller
 
             Yii::info("sms:" . $sms);
 
-            SmsSender::queueSend($this->phoneNumber, $sms);
+            SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
         }
 
@@ -430,7 +461,7 @@ class SmsController extends Controller
 
                     Yii::info($sms);
 
-                    SmsSender::queueSend($this->phoneNumber, $sms);
+                    SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
                 } else {
                     //TODO: send sms that route could not be found
                     $status = Controller::EXIT_CODE_ERROR;
@@ -454,14 +485,11 @@ class SmsController extends Controller
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
-        /** @var \pheme\settings\components\Settings $settings */
-        $settings = Yii::$app->settings;
-
-        $settings->delete($this->phoneNumber . ".events");
+        Yii::$app->user->setEvents(null);
 
         $sms = Yii::t('sms', 'You will not receive daily SMS');
 
-        SmsSender::queueSend($this->phoneNumber, $sms);
+        SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
         return $status;
     }
@@ -535,7 +563,7 @@ class SmsController extends Controller
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address)
                         ]);
 
-                        SmsSender::queueSend($this->phoneNumber, $sms);
+                        SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
                     } else {
                         $sms = Yii::t('sms', 'Sorry, you can not report in {location}', [
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address),
@@ -546,7 +574,7 @@ class SmsController extends Controller
                             'shortCode' => Yii::$app->params['smsShortCode'],
                         ]);
 
-                        SmsSender::queueSend($this->phoneNumber, $sms);
+                        SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
                     }
 
                 } else {
@@ -554,7 +582,7 @@ class SmsController extends Controller
                         'location' => $location,
                     ]);
 
-                    SmsSender::queueSend($this->phoneNumber, $sms);
+                    SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
                 }
             } else {
@@ -587,22 +615,24 @@ class SmsController extends Controller
                     $localityFound = null;
                     foreach ($location[0]->address_components as $address) {
                         foreach ($address->types as $type) {
-                            if ($type == 'locality')
+                            if ($type == 'locality') {
                                 $localityFound = $address;
+                            }
                             break;
                         }
-                        if ($localityFound != null)
+                        if ($localityFound != null) {
                             break;
+                        }
                     }
 
                     if ($localityFound) {
-                        Yii::$app->settings->set($this->phoneNumber . ".location", base64_encode(serialize($localityFound)));
+                        Yii::$app->user->setLocation($localityFound);
 
                         $sms = Yii::t('sms', 'You will receive notifications of {city}', [
                             'city' => Yii::t('sms', $localityFound->long_name),
                         ]);
 
-                        SmsSender::queueSend($this->phoneNumber, $sms);
+                        SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
                     } else {
                         $status = Controller::EXIT_CODE_ERROR;
@@ -623,7 +653,9 @@ class SmsController extends Controller
 
         $sms = Yii::t('sms', 'Help Menu:\n');
 
-        if (empty($paramString)) $paramString = 'now city';
+        if (empty($paramString)) {
+            $paramString = 'now city';
+        }
 
         foreach (explode(' ', $paramString) as $command) {
             switch (strtolower($command)) {
@@ -673,8 +705,19 @@ class SmsController extends Controller
             $sms .= "\n\n";
 
         }
-        SmsSender::queueSend($this->phoneNumber, $sms);
+        SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
         return $status;
+    }
+
+    public function actionGlobal()
+    {
+        Yii::info('get: ' . print_r($_GET, true));
+        Yii::info('post: ' . print_r($_POST, true));
+        Yii::info('cookie: ' . print_r($_COOKIE, true));
+        Yii::info('session: ' . print_r($_SESSION, true));
+
+        @session_start();
+
     }
 }

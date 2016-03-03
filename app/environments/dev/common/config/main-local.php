@@ -34,9 +34,6 @@ return [
         'translate' => [
             'key' => 'AIzaSyAfqjLZ0Dwhb8_U82T2Yji3BP-O5E54kHI',
         ],
-        'settings' => [
-            'cache' => null,
-        ],
         'ga' => [
             'trackingId' => 'UA-73119238-4',
             'clientId' => '8314bf1b-6f7b-4582-a3fc-57fdbcaaf76d',
