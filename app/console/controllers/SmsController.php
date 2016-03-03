@@ -119,6 +119,8 @@ class SmsController extends Controller
         $_COOKIE = json_decode($this->cookie, true);
         $_SESSION = json_decode($this->session, true);
 
+        ini_set('session.gc_maxlifetime', Yii::$app->params['sessionExpirySeconds']);
+
         Yii::$app->session->open();
 
         $phoneNumber = isset($_GET['X-PHONE-NUMBER']) ? $_GET['X-PHONE-NUMBER']: '';
@@ -163,7 +165,7 @@ class SmsController extends Controller
         ];
 
         $cookie = [
-            'PHPSESSID' => substr($phoneNumber, 1),     // remove + sign
+            'PHPSESSID' => md5($phoneNumber),
         ];
 
         return implode(' ', array_merge(
@@ -647,14 +649,14 @@ class SmsController extends Controller
         return $status;
     }
 
-    public function actionHelp($paramString)
+    public function actionHelp($paramString = '')
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
         $sms = Yii::t('sms', 'Help Menu:\n');
 
         if (empty($paramString)) {
-            $paramString = 'now city';
+            $paramString = 'now daily city';
         }
 
         foreach (explode(' ', $paramString) as $command) {
@@ -672,7 +674,7 @@ class SmsController extends Controller
                     ]);
                     break;
                 case 'now':
-                    $sms .= Yii::t('sms', 'To get current traffic situation: Send {message}', [
+                    $sms .= Yii::t('sms', 'To get current traffic situation, send {message}', [
                         'message' => 'TUP NOW',
                     ]);
                     break;
@@ -688,7 +690,7 @@ class SmsController extends Controller
                     ]);
                     break;
                 case 'city':
-                    $sms .= Yii::t('sms', 'To set your city: Send {message}\nEx: {example}', [
+                    $sms .= Yii::t('sms', 'To set your city, send {message}\nEx: {example}', [
                         'message' => 'TUP CITY <city-name>',
                         'example' => 'TUP CITY ISLAMABAD',
 
