@@ -307,7 +307,7 @@ class SmsController extends Controller
             $schedule->command($command)->dailyAt($amTime);
             $schedule->command($command)->dailyAt($pmTime);
 
-            Yii::$app->user->setEvents($schedule->getEvents());
+            Yii::$app->user->setSmsSchedule($schedule->getEvents());
 
             $sms = Yii::t('sms', 'You will receive SMS daily at {amTime} and {pmTime}', [
                 'amTime' => $amTime,
@@ -375,7 +375,7 @@ class SmsController extends Controller
         }
     }
 
-    public function actionNow($paramString)
+    public function actionNow($paramString = '')
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
@@ -485,7 +485,7 @@ class SmsController extends Controller
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
-        Yii::$app->user->setEvents(null);
+        Yii::$app->user->setSmsSchedule(null);
 
         $sms = Yii::t('sms', 'You will not receive daily SMS');
 
@@ -710,14 +710,4 @@ class SmsController extends Controller
         return $status;
     }
 
-    public function actionGlobal()
-    {
-        Yii::info('get: ' . print_r($_GET, true));
-        Yii::info('post: ' . print_r($_POST, true));
-        Yii::info('cookie: ' . print_r($_COOKIE, true));
-        Yii::info('session: ' . print_r($_SESSION, true));
-
-        @session_start();
-
-    }
 }

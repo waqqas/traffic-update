@@ -3,33 +3,27 @@
 namespace console\controllers;
 
 
+use common\components\sms\User;
 use common\models\Cron;
-use pheme\settings\models\Setting;
+use common\models\UserPreference;
 use Yii;
 use yii\console\Controller;
-use Cron\CronExpression;
 
 class CronController extends Controller{
 
     public function actionRun(){
 
-        $settings = Setting::findAll([
-            'key' => 'events',
-            'active' => 1
+        $preferences = UserPreference::findAll([
+            'name' => User::PREF_SCHEDULE_SMS,
         ]);
 
-        foreach($settings as $setting){
+        $schedule = Yii::$app->schedule;
 
-            $events = unserialize(base64_decode($setting->value));
+        foreach($preferences as $preference){
 
-            /** @var \common\components\Schedule $schedule */
-            $schedule = Yii::$app->schedule;
-
-            $schedule->setEvents($events);
+            $schedule->setEvents($preference->value);
 
             $dueEvents = $schedule->dueEvents(Yii::$app);
-
-//            Yii::info( print_r($dueEvents, true));
 
             foreach( $dueEvents as $event){
                 $event->run(Yii::$app);

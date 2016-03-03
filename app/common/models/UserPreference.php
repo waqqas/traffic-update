@@ -15,6 +15,11 @@ use Yii;
  */
 class UserPreference extends \yii\db\ActiveRecord
 {
+    const ENCODING_BASE64_SERIALIZE = 'base64_serialize';
+    const ENCODING_SERIALIZE = 'serialize';
+    const ENCODING_NONE = 'none';
+
+
     /**
      * @inheritdoc
      */
@@ -56,10 +61,10 @@ class UserPreference extends \yii\db\ActiveRecord
         parent::afterFind();
 
         switch($this->encoding){
-            case 'base64_serialize':
+            case self::ENCODING_BASE64_SERIALIZE:
                 $this->value = unserialize(base64_decode($this->value));
                 break;
-            case 'serialize':
+            case self::ENCODING_SERIALIZE:
                 $this->value = unserialize($this->value);
                 break;
         }
@@ -69,16 +74,17 @@ class UserPreference extends \yii\db\ActiveRecord
     public function beforeValidate()
     {
         switch($this->encoding){
-            case 'base64_serialize':
+            case self::ENCODING_BASE64_SERIALIZE:
                 $this->value = base64_encode(serialize($this->value));
                 break;
-            case 'serialize':
+            case self::ENCODING_SERIALIZE:
                 $this->value = serialize($this->value);
                 break;
         }
 
         return parent::beforeValidate();
     }
+
 
     // AR Relations
     public function getUser()
