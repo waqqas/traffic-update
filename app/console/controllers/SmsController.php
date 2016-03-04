@@ -90,8 +90,8 @@ class SmsCommand
                 'example' => 'accident AT Faizabad Interchange',
             ],
             'full' => [
-                'message' => 'LANGUAGE <urdu/english>',
-                'example' => 'LANGUAGE urdu',
+                'message' => 'REPORT <congestion/accident/blockade/construction> AT <location>',
+                'example' => 'REPORT accident AT Faizabad Interchange',
             ]
 
         ],
