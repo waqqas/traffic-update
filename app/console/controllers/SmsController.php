@@ -707,7 +707,7 @@ class SmsController extends Controller
 
             $incidents = $dataProvider->getModels();
 
-            $sms = "on.fb.me/24FCee2\n";
+            $sms = "bit.ly/2RoadEZ\n";
             $sms .= Yii::$app->formatter->asSMS($incidents);
 
 
