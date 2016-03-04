@@ -30,7 +30,8 @@ class SmsCommand
         'daily' => [
             'type' => SmsCommand::REGEX,
             'regex' => '((0?\d|1[0-2]):*(0\d|[0-5]\d)*\s+(0?\d|1[0-2]):*(0\d|[0-5]\d)*)',
-            'info' => 'To get daily notifications, send {message}\nEx: {example}',
+            'shortcutInfo' => 'To get daily notifications now, send {message}\nEx: {example}',
+            'fullInfo' => 'To get daily notifications, send {message}\nEx: {example}',
             'shortcut' => [
                 'message' => '<AM time> <PM time>',
                 'example' => '8:00 5:30',
@@ -43,7 +44,8 @@ class SmsCommand
         'language' => [
             'type' => SmsCommand::REGEX,
             'regex' => '((urdu|english)\s*)$',
-            'info' => 'To select language, send {message}\nEx: {example}',
+            'shortcutInfo' => 'To select language now, send {message}\nEx: {example}',
+            'fullInfo' => 'To select language, send {message}\nEx: {example}',
             'shortcut' => [
                 'message' => '<urdu/english>',
                 'example' => 'urdu',
@@ -56,7 +58,7 @@ class SmsCommand
         'route' => [
             'type' => SmsCommand::REGEX,
             'regex' => '',
-            'info' => 'To get best route, send {message}\nEx: {example}',
+            'fullInfo' => 'To get best route, send {message}\nEx: {example}',
             'full' => [
                 'message' => 'ROUTE <source> TO <destination>',
                 'example' => 'ROUTE F-6, Islamabad TO F-10, Islamabad',
@@ -64,14 +66,16 @@ class SmsCommand
         ],
         'now' => [
             'type' => SmsCommand::NUMERIC,
-            'info' => 'To get current traffic situation, send {message}',
+            'shortcutInfo' => 'To get current traffic situation now, send {message}',
+            'fullInfo' => 'To get current traffic situation, send {message}',
             'full' => [
                 'message' => 'NOW',
             ],
         ],
         'stop' => [
             'type' => SmsCommand::NUMERIC,
-            'info' => 'To stop receiving daily notifications, send {message}',
+            'shortcutInfo' => 'To stop receiving daily notifications, send {message}',
+            'fullInfo' => 'To stop receiving daily notifications, send {message}',
             'full' => [
                 'message' => 'STOP'
             ],
@@ -79,7 +83,8 @@ class SmsCommand
         'report' => [
             'type' => SmsCommand::REGEX,
             'regex' => '((accident|congestion|construction|blockade)\s+at\s+.*)',
-            'info' => 'To report traffic incident, {message}\nEx: {example}',
+            'shortcutInfo' => 'To report traffic incident now, {message}\nEx: {example}',
+            'fullInfo' => 'To report traffic incident, {message}\nEx: {example}',
             'shortcut' => [
                 'message' => '<congestion/accident/blockade/construction> AT <location>',
                 'example' => 'accident AT Faizabad Interchange',
@@ -93,7 +98,7 @@ class SmsCommand
         'city' => [
             'type' => SmsCommand::REGEX,
             'regex' => '',
-            'info' => 'To set your current city, send {message}\nEx: {example}',
+            'fullInfo' => 'To set your current city, send {message}\nEx: {example}',
             'full' => [
                 'message' => 'CITY <city-name>',
                 'example' => 'CITY ISLAMABAD',
@@ -102,7 +107,7 @@ class SmsCommand
         'help' => [
             'type' => SmsCommand::REGEX,
             'regex' => '',
-            'info' => 'To get help on command: Send {message}\nEx: {example}',
+            'fullInfo' => 'To get help on command: Send {message}\nEx: {example}',
             'full' => [
                 'message' => 'HELP <command>',
                 'example' => 'HELP REPORT',
@@ -110,7 +115,6 @@ class SmsCommand
         ],
         '$' => [
             'type' => SmsCommand::DUMMY,
-            'regex' => null,
         ],
     ];
 
@@ -123,7 +127,7 @@ class SmsCommand
             case SmsCommand::REGEX:
                 if ($shorten && !empty($command['regex'])) {
                     $message = [
-                        'info' => $command['info'],
+                        'info' => $command['shortcutInfo'],
                         'params' => array_map(
                             function ($param) {
                                 return Yii::$app->params['smsKeyword'] . " " . $param;
@@ -134,7 +138,7 @@ class SmsCommand
                     $this->shortcuts[$keyword] = $command['regex'];
                 } else {
                     $message = [
-                        'info' => $command['info'],
+                        'info' => $command['fullInfo'],
                         'params' => array_map(
                             function ($param) {
                                 return Yii::$app->params['smsKeyword'] . " " . $param;
@@ -146,7 +150,7 @@ class SmsCommand
             case SmsCommand::NUMERIC:
                 if ($shorten) {
                     $message = [
-                        'info' => $command['info'],
+                        'info' => $command['shortcutInfo'],
                         'params' => [
                             'message' => Yii::$app->params['smsKeyword'] . " " . $this->commandNumber,
                             'example' => Yii::$app->params['smsKeyword'] . " " . $this->commandNumber,
@@ -158,7 +162,7 @@ class SmsCommand
                     $this->commandNumber++;
                 } else {
                     $message = [
-                        'info' => $command['info'],
+                        'info' => $command['fullInfo'],
                         'params' => array_map(
                             function ($param) {
                                 return Yii::$app->params['smsKeyword'] . " " . $param;
@@ -863,7 +867,16 @@ class SmsController extends Controller
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address)
                         ]);
 
+                        $sms .= "\n";
+
+                        $smsCommand = new SmsCommand();
+                        $sms .= '\n';
+                        $sms .= $smsCommand->generateInfo('report', false);
+
                         SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+
+                        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
+
                     } else {
                         $sms = Yii::t('sms', 'Sorry, you can not report in {location}', [
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address),
