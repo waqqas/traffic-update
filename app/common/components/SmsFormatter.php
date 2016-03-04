@@ -26,15 +26,13 @@ class SmsFormatter extends Formatter
 
         if (count($incidents) == 0) {
             $sms .= Yii::t('sms', 'There are no reported incidents.');
-            $sms .= "\n";
         } else {
 
             /** @var \common\models\Incident $incident */
             foreach ($incidents as $incident) {
 //            Yii::info("incident: ". print_r($incident, true));
 
-                $incLine = Yii::t('sms', '{id}- {incident} at {location}. Delay: {delay} minutes', [
-                    'id' => $incident->id,
+                $incLine = Yii::t('sms', '{incident} at {location}. Delay: {delay} minutes', [
                     'incident' => $this->getIncident($incident),
                     'location' => Yii::t('sms', $incident->location),
                     'delay' => $incident->delayFromFreeFlow
@@ -42,10 +40,6 @@ class SmsFormatter extends Formatter
                 $sms .= $incLine . "\n";
             }
         }
-        $sms .= Yii::t('sms', 'Report traffic problems by sending {message} on {shortCode}', [
-            'message' => 'TUP REPORT <congestion/accident/blockade/construction> AT <location>',
-            'shortCode' => Yii::$app->params['smsShortCode'],
-        ]);
 
         return $sms;
     }

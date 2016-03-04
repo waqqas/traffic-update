@@ -18,51 +18,227 @@ class SmsCommand
     const DUMMY = 0;
     const NUMERIC = 1;
     const REGEX = 2;
-}
 
-class SmsController extends Controller
-{
-    // Regex must be such that $matches[1] catches all the parameters after keyword (e.g. TUP)
-    // regex must be unique
+
+    public $commandNumber = 1;
+
+    public $shortcuts = [];
+
+    // regex must be such that $matches[1] catches all the parameters after keyword (e.g. TUP)
 
     public static $availableCommands = [
         'daily' => [
             'type' => SmsCommand::REGEX,
             'regex' => '((0?\d|1[0-2]):*(0\d|[0-5]\d)*\s+(0?\d|1[0-2]):*(0\d|[0-5]\d)*)',
+            'info' => 'To get daily notifications, send {message}\nEx: {example}',
+            'shortcut' => [
+                'message' => '<AM time> <PM time>',
+                'example' => '8:00 5:30',
+            ],
+            'full' => [
+                'message' => 'DAILY <AM time> <PM time>',
+                'example' => 'DAILY 8:00 5:30',
+            ],
         ],
         'language' => [
             'type' => SmsCommand::REGEX,
-            'regex' => '',
+            'regex' => '((urdu|english)\s*)$',
+            'info' => 'To select language, send {message}\nEx: {example}',
+            'shortcut' => [
+                'message' => '<urdu/english>',
+                'example' => 'urdu',
+            ],
+            'full' => [
+                'message' => 'LANGUAGE <urdu/english>',
+                'example' => 'LANGUAGE urdu',
+            ]
         ],
         'route' => [
             'type' => SmsCommand::REGEX,
             'regex' => '',
+            'info' => 'To get best route, send {message}\nEx: {example}',
+            'full' => [
+                'message' => 'ROUTE <source> TO <destination>',
+                'example' => 'ROUTE F-6, Islamabad TO F-10, Islamabad',
+            ]
         ],
         'now' => [
             'type' => SmsCommand::NUMERIC,
-            'regex' => null,
+            'info' => 'To get current traffic situation, send {message}',
+            'full' => [
+                'message' => 'NOW',
+            ],
         ],
         'stop' => [
             'type' => SmsCommand::NUMERIC,
-            'regex' => null,
+            'info' => 'To stop receiving daily notifications, send {message}',
+            'full' => [
+                'message' => 'STOP'
+            ],
         ],
         'report' => [
             'type' => SmsCommand::REGEX,
-            'regex' => '',
+            'regex' => '((accident|congestion|construction|blockade)\s+at\s+.*)',
+            'info' => 'To report traffic incident, {message}\nEx: {example}',
+            'shortcut' => [
+                'message' => '<congestion/accident/blockade/construction> AT <location>',
+                'example' => 'accident AT Faizabad Interchange',
+            ],
+            'full' => [
+                'message' => 'LANGUAGE <urdu/english>',
+                'example' => 'LANGUAGE urdu',
+            ]
+
         ],
         'city' => [
             'type' => SmsCommand::REGEX,
             'regex' => '',
+            'info' => 'To set your current city, send {message}\nEx: {example}',
+            'full' => [
+                'message' => 'CITY <city-name>',
+                'example' => 'CITY ISLAMABAD',
+            ],
         ],
         'help' => [
             'type' => SmsCommand::REGEX,
             'regex' => '',
+            'info' => 'To get help on command: Send {message}\nEx: {example}',
+            'full' => [
+                'message' => 'HELP <command>',
+                'example' => 'HELP REPORT',
+            ],
         ],
         '$' => [
             'type' => SmsCommand::DUMMY,
             'regex' => null,
         ],
     ];
+
+    public function generateMessage($keyword, $shorten = true)
+    {
+        $command = self::$availableCommands[$keyword];
+
+        $message = [];
+        switch ($command['type']) {
+            case SmsCommand::REGEX:
+                if ($shorten && !empty($command['regex'])) {
+                    $message = [
+                        'info' => $command['info'],
+                        'params' => array_map(
+                            function ($param) {
+                                return Yii::$app->params['smsKeyword'] . " " . $param;
+                            }
+                            , $command['shortcut']),
+                    ];
+
+                    $this->shortcuts[$keyword] = $command['regex'];
+                } else {
+                    $message = [
+                        'info' => $command['info'],
+                        'params' => array_map(
+                            function ($param) {
+                                return Yii::$app->params['smsKeyword'] . " " . $param;
+                            }
+                            , $command['full'])
+                    ];
+                }
+                break;
+            case SmsCommand::NUMERIC:
+                if ($shorten) {
+                    $message = [
+                        'info' => $command['info'],
+                        'params' => [
+                            'message' => Yii::$app->params['smsKeyword'] . " " . $this->commandNumber,
+                            'example' => Yii::$app->params['smsKeyword'] . " " . $this->commandNumber,
+                        ]
+                    ];
+
+                    $this->shortcuts[$keyword] = "\\b($this->commandNumber)$";
+
+                    $this->commandNumber++;
+                } else {
+                    $message = [
+                        'info' => $command['info'],
+                        'params' => array_map(
+                            function ($param) {
+                                return Yii::$app->params['smsKeyword'] . " " . $param;
+                            }
+                            , $command['full'])
+                    ];
+
+                }
+                break;
+        }
+        return $message;
+
+
+    }
+
+    public function generateInfo($keyword, $shorten = true)
+    {
+
+        $message = $this->generateMessage($keyword, $shorten);
+
+
+//        Yii::info( "message:($keyword) " . print_r($message, true));
+
+        if (!empty($message)) {
+            return Yii::t('sms', $message['info'], $message['params']);
+        }
+        return null;
+    }
+
+
+    /*
+            switch ($keyword) {
+                case 'language':
+                    $sms = Yii::t('sms', 'To select language, send {message}\nEx: {example}', [
+                        'message' => ,
+                        'example' => 'TUP LANGUAGE URDU',
+                    ]);
+                    break;
+                case 'daily':
+                    $sms = Yii::t('sms', 'To get daily notifications, send {message}\nEx: {example}', [
+                        'message' => 'TUP DAILY <AM time> <PM time>',
+                        'example' => 'TUP DAILY 8:30 5:30'
+                    ]);
+                    break;
+                case 'now':
+                    $sms = Yii::t('sms', 'To get current traffic situation, send {message}', [
+                        'message' => 'TUP NOW',
+                    ]);
+                    break;
+                case 'stop':
+                    $sms = Yii::t('sms', 'To stop receiving daily notifications, send {message}', [
+                        'message' => 'TUP STOP'
+                    ]);
+                    break;
+                case 'report':
+                    $sms = Yii::t('sms', 'To report traffic problem, send {message}\nEx: {example}', [
+                        'message' => 'TUP REPORT <congestion/accident/blockade/construction> AT <location>',
+                        'example' => 'TUP REPORT accident AT Faizabad Interchange',
+                    ]);
+                    break;
+                case 'city':
+                    $sms = Yii::t('sms', 'To set your city, send {message}\nEx: {example}', [
+                        'message' => 'TUP CITY <city-name>',
+                        'example' => 'TUP CITY ISLAMABAD',
+
+                    ]);
+                    break;
+                case 'help':
+                    $sms = Yii::t('sms', 'To get help on command: Send {message}\nEx: {example}', [
+                        'message' => 'TUP HELP <command>',
+                        'example' => 'TUP HELP REPORT',
+
+                    ]);
+                    break;
+            }
+            */
+}
+
+class SmsController extends Controller
+{
 
     /**
      * @var string JSON encoded string to set $_GET global variable
@@ -241,7 +417,7 @@ class SmsController extends Controller
 
         Yii::info('command: ' . $command);
 
-        $keywords = array_keys(self::$availableCommands);
+        $keywords = array_keys(SmsCommand::$availableCommands);
 
         if (in_array($command, $keywords)) {
 
@@ -275,7 +451,7 @@ class SmsController extends Controller
         /** @var \common\models\Smsmo $mo */
         $mo = Smsmo::findOne(['id' => $id]);
         if ($mo) {
-            foreach (self::$availableCommands as $keyword => $data) {
+            foreach (SmsCommand::$availableCommands as $keyword => $data) {
                 $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*($keyword)(.*)/i";
 
 
@@ -308,11 +484,9 @@ class SmsController extends Controller
             $shortCuts = Yii::$app->session->get('shortcuts', []);
 
             if (!empty($shortCuts)) {
-                foreach ($shortCuts as $regex => $command) {
+                foreach ($shortCuts as $command => $regex) {
 
                     $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*$regex/i";
-
-                    Yii::info('shortcut regex: ' . $regex);
 
                     if (preg_match($regex, $mo->text, $output_array)) {
 
@@ -320,8 +494,6 @@ class SmsController extends Controller
                         array_shift($output_array);
 
                         $params = array_shift($output_array);
-
-                        Yii::info('shortcut command params: ' . $params);
 
                         if ($this->runCommand($command, $params)) {
                             $mo->status = 'processed';
@@ -418,14 +590,16 @@ class SmsController extends Controller
                 'pmTime' => $pmTime,
             ]);
 
-            $sms .= "\n";
 
-            $sms .= Yii::t('sms', 'Send {message} at {shortCode} to stop daily notifications', [
-                'message' => Yii::$app->params['smsKeyword'] . " STOP",
-                'shortCode' => Yii::$app->params['smsShortCode'],
-            ]);
+            $smsCommand = new SmsCommand();
+            $sms .= "\n";
+            $sms .= $smsCommand->generateInfo('stop', false);
+            $sms .= "\n";
+            $sms .= $smsCommand->generateInfo('report', false);
 
             SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+
+            Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
         }
 
@@ -466,8 +640,15 @@ class SmsController extends Controller
                     $sms = Yii::t('sms', 'You will now receive SMS in {language}', [
                         'language' => $lang->name,
                     ]);
+                    $smsCommand = new SmsCommand();
+                    foreach (['now', 'daily', 'city'] as $command) {
+                        $sms .= "\n";
+                        $sms .= $smsCommand->generateInfo($command);
+                    }
 
                     SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+
+                    Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
                 } else {
                     //TODO: send error SMS
                     $status = Controller::EXIT_CODE_ERROR;
@@ -521,10 +702,19 @@ class SmsController extends Controller
 
             $sms = Yii::$app->formatter->asSMS($incidents);
 
+
+            $smsCommand = new SmsCommand();
+            $sms .= '\n\n';
+            $sms .= $smsCommand->generateInfo('report');
+            // TODO: send only if the user does not have daily subscription
+            $sms .= '\n';
+            $sms .= $smsCommand->generateInfo('daily');
+
             Yii::info("sms:" . $sms);
 
             SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
+            Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
         }
 
         return $status;
@@ -593,7 +783,13 @@ class SmsController extends Controller
 
         $sms = Yii::t('sms', 'You will not receive daily SMS');
 
+        $smsCommand = new SmsCommand();
+        $sms .= "\n";
+        $sms .= $smsCommand->generateInfo('daily');
+
         SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+
+        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
         return $status;
     }
@@ -673,12 +869,15 @@ class SmsController extends Controller
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address),
                         ]);
                         $sms .= "\n";
-                        $sms .= Yii::t('sms', 'Please change your city by sending {message} to {shortCode}', [
-                            'message' => 'TUP CITY <city-name>',
-                            'shortCode' => Yii::$app->params['smsShortCode'],
-                        ]);
+
+                        $smsCommand = new SmsCommand();
+                        $sms .= '\n';
+                        $sms .= $smsCommand->generateInfo('city');
 
                         SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+
+                        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
+
                     }
 
                 } else {
@@ -736,7 +935,15 @@ class SmsController extends Controller
                             'city' => Yii::t('sms', $localityFound->long_name),
                         ]);
 
+                        $smsCommand = new SmsCommand();
+                        $sms .= "\n";
+                        $sms .= $smsCommand->generateInfo('now');
+                        $sms .= "\n";
+                        $sms .= $smsCommand->generateInfo('daily');
+
                         SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+
+                        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
                     } else {
                         $status = Controller::EXIT_CODE_ERROR;
@@ -761,77 +968,21 @@ class SmsController extends Controller
             $paramString = 'now daily city';
         }
 
+        // generate shortcuts
+        $smsCommand = new SmsCommand();
+
         foreach (explode(' ', $paramString) as $command) {
-            switch (strtolower($command)) {
-                case 'language':
-                    $sms .= Yii::t('sms', 'To select language, send {message}\nEx: {example}', [
-                        'message' => 'TUP LANGUAGE <urdu/english> ',
-                        'example' => 'TUP LANGUAGE URDU',
-                    ]);
-                    break;
-                case 'daily':
-                    $sms .= Yii::t('sms', 'To get daily notifications, send {message}\nEx: {example}', [
-                        'message' => 'TUP DAILY <AM time> <PM time>',
-                        'example' => 'TUP DAILY 8:30 5:30'
-                    ]);
-                    break;
-                case 'now':
-                    $sms .= Yii::t('sms', 'To get current traffic situation, send {message}', [
-                        'message' => 'TUP NOW',
-                    ]);
-                    break;
-                case 'stop':
-                    $sms .= Yii::t('sms', 'To stop receiving daily notifications, send {message}', [
-                        'message' => 'TUP STOP'
-                    ]);
-                    break;
-                case 'report':
-                    $sms .= Yii::t('sms', 'To report traffic problem, send {message}\nEx: {example}', [
-                        'message' => 'TUP REPORT <congestion/accident/blockade/construction> AT <location>',
-                        'example' => 'TUP REPORT accident AT Faizabad Interchange',
-                    ]);
-                    break;
-                case 'city':
-                    $sms .= Yii::t('sms', 'To set your city, send {message}\nEx: {example}', [
-                        'message' => 'TUP CITY <city-name>',
-                        'example' => 'TUP CITY ISLAMABAD',
+            $sms .= $smsCommand->generateInfo(strtolower($command));
 
-                    ]);
-                    break;
-                case 'help':
-                    $sms .= Yii::t('sms', 'To get help on command: Send {message}\nEx: {example}', [
-                        'message' => 'TUP HELP <command>',
-                        'example' => 'TUP HELP REPORT',
-
-                    ]);
-                    break;
-            }
-            $sms .= "\n\n";
+            $sms .= "\n";
 
         }
         SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
-        $shortcuts = [];
-        $commandNumber = 1;
-        foreach(self::$availableCommands as $keyword => $command){
-            switch($command['type']){
-                case SmsCommand::REGEX:
-                    if( !empty($command['regex']))
-                        $shortcuts[$command['regex']] = $keyword;
-                    break;
-                case SmsCommand::NUMERIC:
-                    $shortcuts["\\b($commandNumber)$"] = $keyword;
-                    $commandNumber++;
-                    break;
-            }
-        }
+        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
-        Yii::$app->session->set('shortcuts', $shortcuts);
-//        Yii::$app->session->set('shortcuts', [
-//            '\b(1)$' => 'now',
-//            '((0?\d|1[0-2]):*(0\d|[0-5]\d)*\s+(0?\d|1[0-2]):*(0\d|[0-5]\d)*)' => 'daily',
-//        ]);
         return $status;
     }
+
 
 }
