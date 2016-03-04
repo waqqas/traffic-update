@@ -15,6 +15,8 @@ use yii\data\ActiveDataProvider;
 
 class SmsController extends Controller
 {
+    static $availableCommands = ['daily', 'language', 'route', 'now', 'stop', 'report', 'city', 'help', '$'];
+
     /**
      * @var string JSON encoded string to set $_GET global variable
      */
@@ -123,13 +125,15 @@ class SmsController extends Controller
 
         Yii::$app->session->open();
 
-        $phoneNumber = isset($_GET['X-PHONE-NUMBER']) ? $_GET['X-PHONE-NUMBER']: '';
+        $phoneNumber = isset($_GET['X-PHONE-NUMBER']) ? $_GET['X-PHONE-NUMBER'] : '';
 
-        if(empty($phoneNumber)) return false;
+        if (empty($phoneNumber)) {
+            return false;
+        }
 
         $identity = User::findIdentityByPhoneNumber($phoneNumber);
 
-        if( !$identity ){
+        if (!$identity) {
             $identity = $this->createUser($phoneNumber);
         }
         Yii::$app->user->setIdentity($identity);
@@ -137,10 +141,11 @@ class SmsController extends Controller
         // get user's language preference
         $language = Yii::$app->user->identity->getPreference('language')->one();
 
-        if(!$language)
+        if (!$language) {
             $language = Yii::$app->sourceLanguage;
-        else
+        } else {
             $language = $language->value;
+        }
 
         Yii::$app->language = $language;
 
@@ -181,57 +186,105 @@ class SmsController extends Controller
 
     }
 
+
+    public function runCommand($command, $paramString)
+    {
+
+        $success = true;
+
+        Yii::info('command: ' . $command);
+
+        if (in_array($command, self::$availableCommands)) {
+
+            $phoneNumber = Yii::$app->user->getPhoneNumber();
+            /** @var \libphonenumber\PhoneNumber $phone */
+            $phone = Yii::$app->phone->parse($phoneNumber, 'PK');
+
+            Yii::$app->ga->track([
+                'ec' => 'sms',
+                'ea' => $command,
+                'uid' => $phoneNumber,
+                'geoid' => Yii::$app->phone->getRegionCodeForNumber($phone),
+            ]);
+
+            $runCommand = self::getCommand($command, $phoneNumber, '"' . $paramString . '"');
+
+            Yii::$app->consoleRunner->run($runCommand);
+
+            $success = true;
+        } else {
+            $success = false;
+
+        }
+
+        return $success;
+
+    }
+
     public function actionMo($id)
     {
         /** @var \common\models\Smsmo $mo */
         $mo = Smsmo::findOne(['id' => $id]);
         if ($mo) {
+            foreach (self::$availableCommands as $command) {
+                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*($command)(.*)/i";
 
-            $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|language|daily|now|stop|report|city|help]*)(.*)/i";
 
-            if (preg_match($regex, $mo->text, $output_array)) {
+                if (preg_match($regex, $mo->text, $output_array)) {
 
-                // remove the all matching
-                array_shift($output_array);
+                    // remove the all matching
+                    array_shift($output_array);
 
-                // remove leading and trailing spaces
-                $output_array = array_map('trim', $output_array);
+                    // remove leading and trailing spaces
+                    $output_array = array_map('trim', $output_array);
 
-                $command = strtolower(array_shift($output_array));
+                    $command = strtolower(array_shift($output_array));
 
-                // default command
-                if (empty($command)) {
-                    $command = 'help';
-                }
+                    // default command
+                    if (empty($command)) {
+                        $command = 'help';
+                    }
 
-                Yii::info('command: ' . $command);
 
-                if (in_array($command, ['daily', 'language', 'route', 'now', 'stop', 'report', 'city', 'help'])) {
-
-                    /** @var \libphonenumber\PhoneNumber $phone */
-                    $phone = Yii::$app->phone->parse($mo->msisdn, 'PK');
-
-                    Yii::$app->ga->track([
-                        'ec' => 'sms',
-                        'ea' => $command,
-                        'uid' => $mo->msisdn,
-                        'geoid' => Yii::$app->phone->getRegionCodeForNumber($phone),
-                    ]);
-
-                    $runCommand = self::getCommand($command, $mo->msisdn, '"' . $output_array[0] . '"');
-
-                    Yii::$app->consoleRunner->run($runCommand);
-
-                    $mo->status = 'processed';
-
-                } else {
-                    //TODO send possible formats SMS
-                    $mo->status = 'invalid';
+                    if ($this->runCommand($command, $output_array[0])) {
+                        $mo->status = 'processed';
+                    } else {
+                        $mo->status = 'invalid';
+                    }
+                    break;
 
                 }
-            } else {
-                $mo->status = 'invalid';
             }
+
+            $shortCuts = Yii::$app->session->get('shortcuts', []);
+
+            if (!empty($shortCuts)) {
+                foreach ($shortCuts as $regex => $command) {
+
+                    $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*$regex/i";
+
+                    Yii::info('shortcut regex: ' . $regex);
+
+                    if (preg_match($regex, $mo->text, $output_array)) {
+
+                        // remove the all matching
+                        array_shift($output_array);
+
+                        $params = array_shift($output_array);
+
+                        Yii::info('shortcut command params: ' . $params);
+
+                        if ($this->runCommand($command, $params)) {
+                            $mo->status = 'processed';
+                        } else {
+                            $mo->status = 'invalid';
+                        }
+                        break;
+
+                    }
+                }
+            }
+
             $mo->save();
         }
         return Controller::EXIT_CODE_NORMAL;
@@ -269,7 +322,7 @@ class SmsController extends Controller
         }
     }
 
-    public function actionDaily($paramString)
+    public function actionDaily($paramString = '')
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
@@ -709,6 +762,11 @@ class SmsController extends Controller
         }
         SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
+        // Regex must be such that $matches[1] catches all the parameters after keyword (e.g. TUP)
+        Yii::$app->session->set('shortcuts', [
+            '(1)$' => 'now',
+            '((0?\d|1[0-2]):*(0\d|[0-5]\d)*\s+(0?\d|1[0-2]):*(0\d|[0-5]\d)*)' => 'daily',
+        ]);
         return $status;
     }
 
