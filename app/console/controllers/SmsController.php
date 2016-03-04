@@ -82,15 +82,15 @@ class SmsCommand
         ],
         'report' => [
             'type' => SmsCommand::REGEX,
-            'regex' => '((accident|congestion|construction|blockade)\s+at\s+.*)',
+            'regex' => '((accident|congestion|construction|blockade|open)\s+at\s+.*)',
             'shortcutInfo' => 'To report traffic incident now, {message}\nEx: {example}',
             'fullInfo' => 'To report traffic incident, {message}\nEx: {example}',
             'shortcut' => [
-                'message' => '<congestion/accident/blockade/construction> AT <location>',
+                'message' => '<congestion/accident/blockade/construction/open> AT <location>',
                 'example' => 'accident AT Faizabad Interchange',
             ],
             'full' => [
-                'message' => 'REPORT <congestion/accident/blockade/construction> AT <location>',
+                'message' => 'REPORT <congestion/accident/blockade/construction/open> AT <location>',
                 'example' => 'REPORT accident AT Faizabad Interchange',
             ]
 
@@ -824,6 +824,10 @@ class SmsController extends Controller
                 $incidentText = 'unknown event';
 
                 switch ($incidentType) {
+                    case 'open':
+                        $incident->type = 0;
+                        $incidentText = 'open';
+                        break;
                     case 'construction':
                         $incident->type = 1;
                         $incidentText = 'construction';
@@ -841,7 +845,7 @@ class SmsController extends Controller
                         $incidentText = 'accident';
                         break;
                     default:
-                        $incident->type = 0;
+                        $incident->type = 100;
                         $incidentText = 'unknown event';
                 }
 

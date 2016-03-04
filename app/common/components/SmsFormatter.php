@@ -3,7 +3,6 @@
 namespace common\components;
 
 use Yii;
-use yii\base\Component;
 
 use Flow\JSONPath\JSONPath;
 use yii\i18n\Formatter;
@@ -49,6 +48,9 @@ class SmsFormatter extends Formatter
     private function getIncident($incident)
     {
         switch ($incident->type) {
+            case 0: // Open
+                $name = Yii::t('sms','Open');
+                break;
             case 1: // Construction
                 $name = Yii::t('sms', "Construction");
                 break;
