@@ -13,9 +13,56 @@ use common\models\Smsmo;
 use common\models\Smsmt;
 use yii\data\ActiveDataProvider;
 
+class SmsCommand
+{
+    const DUMMY = 0;
+    const NUMERIC = 1;
+    const REGEX = 2;
+}
+
 class SmsController extends Controller
 {
-    static $availableCommands = ['daily', 'language', 'route', 'now', 'stop', 'report', 'city', 'help', '$'];
+    // Regex must be such that $matches[1] catches all the parameters after keyword (e.g. TUP)
+    // regex must be unique
+
+    public static $availableCommands = [
+        'daily' => [
+            'type' => SmsCommand::REGEX,
+            'regex' => '((0?\d|1[0-2]):*(0\d|[0-5]\d)*\s+(0?\d|1[0-2]):*(0\d|[0-5]\d)*)',
+        ],
+        'language' => [
+            'type' => SmsCommand::REGEX,
+            'regex' => '',
+        ],
+        'route' => [
+            'type' => SmsCommand::REGEX,
+            'regex' => '',
+        ],
+        'now' => [
+            'type' => SmsCommand::NUMERIC,
+            'regex' => null,
+        ],
+        'stop' => [
+            'type' => SmsCommand::NUMERIC,
+            'regex' => null,
+        ],
+        'report' => [
+            'type' => SmsCommand::REGEX,
+            'regex' => '',
+        ],
+        'city' => [
+            'type' => SmsCommand::REGEX,
+            'regex' => '',
+        ],
+        'help' => [
+            'type' => SmsCommand::REGEX,
+            'regex' => '',
+        ],
+        '$' => [
+            'type' => SmsCommand::DUMMY,
+            'regex' => null,
+        ],
+    ];
 
     /**
      * @var string JSON encoded string to set $_GET global variable
@@ -194,7 +241,9 @@ class SmsController extends Controller
 
         Yii::info('command: ' . $command);
 
-        if (in_array($command, self::$availableCommands)) {
+        $keywords = array_keys(self::$availableCommands);
+
+        if (in_array($command, $keywords)) {
 
             $phoneNumber = Yii::$app->user->getPhoneNumber();
             /** @var \libphonenumber\PhoneNumber $phone */
@@ -226,8 +275,8 @@ class SmsController extends Controller
         /** @var \common\models\Smsmo $mo */
         $mo = Smsmo::findOne(['id' => $id]);
         if ($mo) {
-            foreach (self::$availableCommands as $command) {
-                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*($command)(.*)/i";
+            foreach (self::$availableCommands as $keyword => $data) {
+                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*($keyword)(.*)/i";
 
 
                 if (preg_match($regex, $mo->text, $output_array)) {
@@ -762,11 +811,26 @@ class SmsController extends Controller
         }
         SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
-        // Regex must be such that $matches[1] catches all the parameters after keyword (e.g. TUP)
-        Yii::$app->session->set('shortcuts', [
-            '(1)$' => 'now',
-            '((0?\d|1[0-2]):*(0\d|[0-5]\d)*\s+(0?\d|1[0-2]):*(0\d|[0-5]\d)*)' => 'daily',
-        ]);
+        $shortcuts = [];
+        $commandNumber = 1;
+        foreach(self::$availableCommands as $keyword => $command){
+            switch($command['type']){
+                case SmsCommand::REGEX:
+                    if( !empty($command['regex']))
+                        $shortcuts[$command['regex']] = $keyword;
+                    break;
+                case SmsCommand::NUMERIC:
+                    $shortcuts["\\b($commandNumber)$"] = $keyword;
+                    $commandNumber++;
+                    break;
+            }
+        }
+
+        Yii::$app->session->set('shortcuts', $shortcuts);
+//        Yii::$app->session->set('shortcuts', [
+//            '\b(1)$' => 'now',
+//            '((0?\d|1[0-2]):*(0\d|[0-5]\d)*\s+(0?\d|1[0-2]):*(0\d|[0-5]\d)*)' => 'daily',
+//        ]);
         return $status;
     }
 
