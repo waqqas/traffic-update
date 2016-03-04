@@ -589,7 +589,8 @@ class SmsController extends Controller
 
             Yii::$app->user->setSmsSchedule($schedule->getEvents());
 
-            $sms = Yii::t('sms', 'You will receive SMS daily at {amTime} and {pmTime}', [
+            $sms = "bit.ly/2RoadEZ\n";
+            $sms .= Yii::t('sms', 'You will receive SMS daily at {amTime} and {pmTime}', [
                 'amTime' => $amTime,
                 'pmTime' => $pmTime,
             ]);
@@ -600,6 +601,7 @@ class SmsController extends Controller
             $sms .= $smsCommand->generateInfo('stop', false);
             $sms .= "\n";
             $sms .= $smsCommand->generateInfo('report', false);
+
 
             SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
@@ -641,7 +643,8 @@ class SmsController extends Controller
 
                     Yii::$app->language = $lang->language_id;
 
-                    $sms = Yii::t('sms', 'You will now receive SMS in {language}', [
+                    $sms = "bit.ly/2RoadEZ\n";
+                    $sms .= Yii::t('sms', 'You will now receive SMS in {language}', [
                         'language' => $lang->name,
                     ]);
                     $smsCommand = new SmsCommand();
@@ -704,7 +707,8 @@ class SmsController extends Controller
 
             $incidents = $dataProvider->getModels();
 
-            $sms = Yii::$app->formatter->asSMS($incidents);
+            $sms = "on.fb.me/24FCee2\n";
+            $sms .= Yii::$app->formatter->asSMS($incidents);
 
 
             $smsCommand = new SmsCommand();
@@ -755,7 +759,9 @@ class SmsController extends Controller
                 if ($routeResponse) {
 
                     $prefix = '[' . $fromAddresses[0]->formatted_address . ' to ' . $toAddresses[0]->formatted_address . '] ';
-                    $sms = Yii::$app->formatter->asSMS($routeResponse, $prefix);
+
+                    $sms = "bit.ly/2RoadEZ\n";
+                    $sms .= Yii::$app->formatter->asSMS($routeResponse, $prefix);
 
                     Yii::info($sms);
 
@@ -785,7 +791,8 @@ class SmsController extends Controller
 
         Yii::$app->user->setSmsSchedule(null);
 
-        $sms = Yii::t('sms', 'You will not receive daily SMS');
+        $sms = "bit.ly/2RoadEZ\n";
+        $sms .= Yii::t('sms', 'You will not receive daily SMS');
 
         $smsCommand = new SmsCommand();
         $sms .= "\n";
@@ -862,7 +869,8 @@ class SmsController extends Controller
 
                         $incident->save();
 
-                        $sms = Yii::t('sms', 'Thank you for reporting {incident} at {location}', [
+                        $sms = "bit.ly/2RoadEZ\n";
+                        $sms .= Yii::t('sms', 'Thank you for reporting {incident} at {location}', [
                             'incident' => Yii::t('sms', $incidentText),
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address)
                         ]);
@@ -878,7 +886,8 @@ class SmsController extends Controller
                         Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
                     } else {
-                        $sms = Yii::t('sms', 'Sorry, you can not report in {location}', [
+                        $sms = "bit.ly/2RoadEZ\n";
+                        $sms .= Yii::t('sms', 'Sorry, you can not report in {location}', [
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address),
                         ]);
                         $sms .= "\n";
@@ -894,7 +903,8 @@ class SmsController extends Controller
                     }
 
                 } else {
-                    $sms = Yii::t('sms', 'Sorry, {location} is not correct', [
+                    $sms = "bit.ly/2RoadEZ\n";
+                    $sms .= Yii::t('sms', 'Sorry, {location} is not correct', [
                         'location' => $location,
                     ]);
 
@@ -944,7 +954,8 @@ class SmsController extends Controller
                     if ($localityFound) {
                         Yii::$app->user->setLocation($localityFound);
 
-                        $sms = Yii::t('sms', 'You will receive notifications of {city}', [
+                        $sms = "bit.ly/2RoadEZ\n";
+                        $sms .= Yii::t('sms', 'You will receive notifications of {city}', [
                             'city' => Yii::t('sms', $localityFound->long_name),
                         ]);
 
@@ -975,7 +986,8 @@ class SmsController extends Controller
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
-        $sms = Yii::t('sms', 'Help Menu:\n');
+        $sms = "bit.ly/2RoadEZ\n";
+        $sms .= Yii::t('sms', 'Help Menu:\n');
 
         if (empty($paramString)) {
             $paramString = 'now daily city';
