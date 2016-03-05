@@ -31,10 +31,10 @@ class SmsFormatter extends Formatter
             foreach ($incidents as $incident) {
 //            Yii::info("incident: ". print_r($incident, true));
 
-                $incLine = Yii::t('sms', '{incident} at {location}. Delay: {delay} minutes', [
+                $incLine = Yii::t('sms', '{incident} at {location}.', [
                     'incident' => $this->getIncident($incident),
                     'location' => Yii::t('sms', $incident->location),
-                    'delay' => $incident->delayFromFreeFlow
+//                    'delay' => $incident->delayFromFreeFlow
                 ]);
                 $sms .= $incLine . "\n";
             }
