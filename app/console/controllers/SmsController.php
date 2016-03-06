@@ -298,13 +298,13 @@ class SmsController extends Controller
             return $value;
         }
 
-        foreach ($location->address_components as $address) {
-            foreach ($address->types as $userType) {
-                if ($userType == $type) {
-                    return $address->{$prop};
-                }
+        $address = $location->value;
+        foreach ($address->types as $userType) {
+            if ($userType == $type) {
+                return $address->{$prop};
             }
         }
+        return null;
     }
 
     private function matchUserLocation($location)
