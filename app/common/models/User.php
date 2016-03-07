@@ -2,6 +2,7 @@
 namespace common\models;
 
 use raoul2000\workflow\base\SimpleWorkflowBehavior;
+use raoul2000\workflow\events\WorkflowEvent;
 use Yii;
 use yii\base\NotSupportedException;
 use yii\behaviors\TimestampBehavior;
@@ -27,6 +28,14 @@ class User extends ActiveRecord implements IdentityInterface
     const STATUS_DELETED = 0;
     const STATUS_ACTIVE = 10;
 
+
+    public function init()
+    {
+        $this->on(
+            WorkflowEvent::beforeEnterStatus('UserWorkflow/demand'),
+            [$this, 'checkScheduledSms']
+        );
+    }
     /**
      * @inheritdoc
      */
@@ -206,6 +215,18 @@ class User extends ActiveRecord implements IdentityInterface
     public function getPreference($name)
     {
         return $this->hasOne(UserPreference::className(), ['user_id' => 'id'])->where(['name' => $name]);
+
+    }
+
+    // Workflow events
+
+    /*
+     * @param \yii\base\Event $event
+     */
+    public function checkScheduledSms($event){
+
+        // all user to go from init -> demand only
+        $event->isValid = ($this->getWorkflowStatus()->getId() == 'UserWorkflow/init');
 
     }
 }
