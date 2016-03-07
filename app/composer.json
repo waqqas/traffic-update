@@ -26,7 +26,8 @@
         "omnilight/yii2-scheduling": "^1.0",
         "lajax/yii2-translate-manager": "^1.5",
         "richweber/yii2-google-translate-api": "^1.0",
-        "raoul2000/yii2-workflow": "^1.0"
+        "raoul2000/yii2-workflow": "*",
+        "mtdowling/cron-expression": "^1.1"
     },
     "require-dev": {
         "yiisoft/yii2-codeception": "*",

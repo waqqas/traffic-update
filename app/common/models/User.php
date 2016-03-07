@@ -1,6 +1,7 @@
 <?php
 namespace common\models;
 
+use raoul2000\workflow\base\SimpleWorkflowBehavior;
 use Yii;
 use yii\base\NotSupportedException;
 use yii\behaviors\TimestampBehavior;
@@ -41,6 +42,11 @@ class User extends ActiveRecord implements IdentityInterface
     {
         return [
             TimestampBehavior::className(),
+            'workflow' => [
+                'class' => SimpleWorkflowBehavior::className(),
+                'statusAttribute' => 'state',
+                'source' => 'workflowSource',
+            ],
         ];
     }
 

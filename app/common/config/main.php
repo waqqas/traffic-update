@@ -80,5 +80,12 @@ return [
             'class' => 'common\components\PhoneNumberComponent',
 
         ],
+        'workflowSource' => [
+            'class' => 'raoul2000\workflow\source\file\WorkflowFileSource',
+            'definitionLoader' => [
+                'class' => 'raoul2000\workflow\source\file\PhpClassLoader',
+                'namespace'  => 'common\workflows'
+            ]
+        ],
     ],
 ];
