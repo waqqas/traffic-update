@@ -104,9 +104,10 @@ class SmsController extends Controller
     {
         $user = new User();
         $user->username = $phoneNumber;
-        $user->email = '';
-        $user->setPassword('');
+        $user->email = "$phoneNumber@roardez.com";
+        $user->setPassword($phoneNumber);
         $user->generateAuthKey();
+        $user->sendToStatus('init');
         if ($user->save()) {
             return $user;
         }
