@@ -136,8 +136,6 @@ class SmsController extends Controller
         }
         Yii::$app->user->setIdentity($identity);
 
-        Yii::$app->user->setState('init');
-
         // get user's language preference
         $language = Yii::$app->user->identity->getPreference('language')->one();
 

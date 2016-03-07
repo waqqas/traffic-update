@@ -89,9 +89,6 @@ class User extends \yii\web\User
 
     public function setState($state)
     {
-        if (!$this->identity->hasWorkflowStatus()) {
-            $this->identity->sendToStatus('init');
-        }
         $this->identity->sendToStatus($state);
     }
 
