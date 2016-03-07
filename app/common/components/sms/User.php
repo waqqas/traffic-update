@@ -87,4 +87,19 @@ class User extends \yii\web\User
         }
     }
 
+    public function setState($state)
+    {
+        if (!$this->identity->hasWorkflowStatus()) {
+            $this->identity->sendToStatus('init');
+        }
+        $this->identity->sendToStatus($state);
+    }
+
+    public function getState()
+    {
+        if ($this->identity->hasWorkflowStatus()) {
+            $this->identity->getWorkflowStatus()->getId();
+        }
+        return null;
+    }
 }

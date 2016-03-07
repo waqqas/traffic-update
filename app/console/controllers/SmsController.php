@@ -136,6 +136,8 @@ class SmsController extends Controller
         }
         Yii::$app->user->setIdentity($identity);
 
+        Yii::$app->user->setState('init');
+
         // get user's language preference
         $language = Yii::$app->user->identity->getPreference('language')->one();
 
@@ -151,6 +153,8 @@ class SmsController extends Controller
 
     public function afterAction($action, $result)
     {
+        Yii::$app->user->identity->save();
+
         Yii::$app->session->close();
         return parent::afterAction($action, $result);
     }
@@ -327,7 +331,7 @@ class SmsController extends Controller
 
             SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
-            Yii::$app->user->identity->sendToStatus('daily');
+            Yii::$app->user->setState('daily');
         }
 
         return $status;
@@ -426,8 +430,7 @@ class SmsController extends Controller
 
             SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
-            Yii::$app->user->identity->sendToStatus('on_demand');
-
+            Yii::$app->user->setState('demand');
         }
 
         return $status;
@@ -498,7 +501,7 @@ class SmsController extends Controller
 
         SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
 
-        Yii::$app->user->identity->sendToStatus('on_demand');
+        Yii::$app->user->setState('demand');
 
         return $status;
     }

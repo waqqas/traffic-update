@@ -8,7 +8,7 @@ class UserWorkflow implements IWorkflowDefinitionProvider{
     public function getDefinition()
     {
         return [
-            'initialStatusId' => 'init',
+        'initialStatusId' => 'init',
             'status' => [
                 'init' => [
                     'transition' => ['demand', 'daily'],
