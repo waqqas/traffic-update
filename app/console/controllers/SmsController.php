@@ -126,13 +126,15 @@ class SmsController extends Controller
 
         Yii::$app->session->open();
 
-        $phoneNumber = isset($_GET['X-PHONE-NUMBER']) ? $_GET['X-PHONE-NUMBER']: '';
+        $phoneNumber = isset($_GET['X-PHONE-NUMBER']) ? $_GET['X-PHONE-NUMBER'] : '';
 
-        if(empty($phoneNumber)) return false;
+        if (empty($phoneNumber)) {
+            return false;
+        }
 
         $identity = User::findIdentityByPhoneNumber($phoneNumber);
 
-        if( !$identity ){
+        if (!$identity) {
             $identity = $this->createUser($phoneNumber);
         }
         Yii::$app->user->setIdentity($identity);
@@ -140,10 +142,11 @@ class SmsController extends Controller
         // get user's language preference
         $language = Yii::$app->user->identity->getPreference('language')->one();
 
-        if(!$language)
+        if (!$language) {
             $language = Yii::$app->sourceLanguage;
-        else
+        } else {
             $language = $language->value;
+        }
 
         Yii::$app->language = $language;
 
@@ -152,6 +155,14 @@ class SmsController extends Controller
 
     public function afterAction($action, $result)
     {
+        /** @var \console\components\sms\Response $response */
+        $response = Yii::$app->response;
+
+        if ($response->exitStatus == Controller::EXIT_CODE_NORMAL && !empty($response->content)) {
+            $sms = $response->content;
+            SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+        }
+
         Yii::$app->user->identity->save();
 
         Yii::$app->session->close();
@@ -328,7 +339,7 @@ class SmsController extends Controller
                 'shortCode' => Yii::$app->params['smsShortCode'],
             ]);
 
-            SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+            Yii::$app->response->content = $sms;
 
             Yii::$app->user->setState('daily');
         }
@@ -371,7 +382,7 @@ class SmsController extends Controller
                         'language' => $lang->name,
                     ]);
 
-                    SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+                    Yii::$app->response->content = $sms;
                 } else {
                     //TODO: send error SMS
                     $status = Controller::EXIT_CODE_ERROR;
@@ -427,7 +438,7 @@ class SmsController extends Controller
 
             Yii::info("sms:" . $sms);
 
-            SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+            Yii::$app->response->content = $sms;
 
             Yii::$app->user->setState('demand');
         }
@@ -470,7 +481,7 @@ class SmsController extends Controller
 
                     Yii::info($sms);
 
-                    SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+                    Yii::$app->response->content = $sms;
                 } else {
                     //TODO: send sms that route could not be found
                     $status = Controller::EXIT_CODE_ERROR;
@@ -498,7 +509,7 @@ class SmsController extends Controller
 
         $sms = Yii::t('sms', 'You will not receive daily SMS');
 
-        SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+        Yii::$app->response->content = $sms;
 
         Yii::$app->user->setState('demand');
 
@@ -574,7 +585,7 @@ class SmsController extends Controller
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address)
                         ]);
 
-                        SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+                        Yii::$app->response->content = $sms;
                     } else {
                         $sms = Yii::t('sms', 'Sorry, you can not report in {location}', [
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address),
@@ -585,7 +596,7 @@ class SmsController extends Controller
                             'shortCode' => Yii::$app->params['smsShortCode'],
                         ]);
 
-                        SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+                        Yii::$app->response->content = $sms;
                     }
 
                 } else {
@@ -593,7 +604,7 @@ class SmsController extends Controller
                         'location' => $location,
                     ]);
 
-                    SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+                    Yii::$app->response->content = $sms;
 
                 }
             } else {
@@ -643,7 +654,7 @@ class SmsController extends Controller
                             'city' => Yii::t('sms', $localityFound->long_name),
                         ]);
 
-                        SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+                        Yii::$app->response->content = $sms;
 
                     } else {
                         $status = Controller::EXIT_CODE_ERROR;
@@ -716,7 +727,8 @@ class SmsController extends Controller
             $sms .= "\n\n";
 
         }
-        SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+
+        Yii::$app->response->content = $sms;
 
         return $status;
     }

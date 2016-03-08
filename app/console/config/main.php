@@ -28,6 +28,9 @@ return [
         'user' => [
             'class' => 'common\components\sms\User',
             'identityClass' => 'common\models\User',
+        ],
+        'response' => [
+            'class' => 'console\components\sms\Response',
         ]
     ],
     'params' => $params,

@@ -35,6 +35,11 @@ class User extends ActiveRecord implements IdentityInterface
             WorkflowEvent::beforeEnterStatus('UserWorkflow/demand'),
             [$this, 'checkScheduledSms']
         );
+
+        $this->on(
+          WorkflowEvent::afterEnterWorkflow(),
+            [$this, 'sendWelcomeMessage']
+        );
     }
     /**
      * @inheritdoc
@@ -227,6 +232,10 @@ class User extends ActiveRecord implements IdentityInterface
 
         // all user to go from init -> demand only
         $event->isValid = ($this->getWorkflowStatus()->getId() == 'UserWorkflow/init');
+
+    }
+
+    public function sendWelcomeMessage($event){
 
     }
 }
