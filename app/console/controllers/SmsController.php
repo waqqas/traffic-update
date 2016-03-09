@@ -15,12 +15,6 @@ use yii\data\ActiveDataProvider;
 class SmsController extends Controller
 {
 
-    // action to state mapping
-    public $userTransitions = [
-        'daily' => 'daily',
-        'now' => 'demand',
-        'stop' => 'demand',
-    ];
 
     private function getUserCity()
     {
@@ -60,6 +54,20 @@ class SmsController extends Controller
         return null;
     }
 
+    public function init()
+    {
+        parent::init();
+
+
+        // action to state mapping
+        $this->userTransitions = [
+        'daily' => 'daily',
+        'now' => 'demand',
+        'stop' => 'demand',
+    ];
+    }
+
+
     private function matchUserLocation($location)
     {
         $match = false;
@@ -79,17 +87,6 @@ class SmsController extends Controller
 
         return $match;
     }
-
-    public function afterAction($action, $result)
-    {
-
-        if( in_array( $action->id, array_keys($this->userTransitions))){
-            Yii::$app->user->setState($this->userTransitions[$action->id]);
-        }
-
-        return parent::afterAction($action, $result);
-    }
-
 
     public function runCommand($command, $paramString)
     {
@@ -281,9 +278,7 @@ class SmsController extends Controller
             $response->addContent($smsCommand->generateInfo('stop', false));
             $response->addContent($smsCommand->generateInfo('report', false));
 
-            Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
-
-//            Yii::$app->user->setState('daily');
+            $response->addSession('shortcuts', $smsCommand->shortcuts);
         }
 
         return $status;
@@ -334,7 +329,7 @@ class SmsController extends Controller
                         $response->addContent($smsCommand->generateInfo($command));
                     }
 
-                    Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
+                    $response->addSession('shortcuts', $smsCommand->shortcuts);
 
                 } else {
                     //TODO: send error SMS
@@ -393,16 +388,13 @@ class SmsController extends Controller
 
             $response->addContent(Yii::$app->formatter->asSMS($incidents));
 
-            $response->addContent("\n");
-
             $smsCommand = new Command();
             $response->addContent($smsCommand->generateInfo('report'));
             // TODO: send only if the user does not have daily subscription
+
             $response->addContent($smsCommand->generateInfo('daily'));
 
-//            Yii::$app->user->setState('demand');
-
-            Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
+            $response->addSession('shortcuts', $smsCommand->shortcuts);
 
         }
 
@@ -481,9 +473,7 @@ class SmsController extends Controller
         $smsCommand = new Command();
         $response->addContent($smsCommand->generateInfo('daily'));
 
-//        Yii::$app->user->setState('demand');
-
-        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
+        $response->addSession('shortcuts', $smsCommand->shortcuts);
 
         return $status;
     }
@@ -686,7 +676,7 @@ class SmsController extends Controller
             $response->addContent($smsCommand->generateInfo(strtolower($command)));
         }
 
-        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
+        $response->addSession('shortcuts', $smsCommand->shortcuts);
 
         return $status;
     }

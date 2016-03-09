@@ -9,6 +9,7 @@ class Response extends \yii\console\Response
 
     public $content = [];
 
+    public $session = [];
 
     public function addContent($content, $position = self::CONTENT_END)
     {
@@ -35,5 +36,9 @@ class Response extends \yii\console\Response
             return implode('\n', $this->content);
         }
         return $this->content;
+    }
+
+    public function addSession($key, $value){
+        $this->session[$key] = $value;
     }
 }

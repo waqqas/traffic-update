@@ -30,6 +30,8 @@ class Controller extends \yii\console\Controller
      */
     public $session = '{}';
 
+    public $userTransitions = [];
+
     public function options($actionID)
     {
         return ['get', 'post', 'cookie', 'session'];
@@ -81,39 +83,43 @@ class Controller extends \yii\console\Controller
 
     public function beforeAction($action)
     {
+        if (!Yii::$app->session->isActive) {
 
-        $_GET = json_decode($this->get, true);
-        $_POST = json_decode($this->post, true);
-        $_COOKIE = json_decode($this->cookie, true);
-        $_SESSION = json_decode($this->session, true);
 
-        ini_set('session.gc_maxlifetime', Yii::$app->params['sessionExpirySeconds']);
+            $_GET = json_decode($this->get, true);
+            $_POST = json_decode($this->post, true);
+            $_COOKIE = json_decode($this->cookie, true);
+            $_SESSION = json_decode($this->session, true);
 
-        Yii::$app->session->open();
+            ini_set('session.gc_maxlifetime', Yii::$app->params['sessionExpirySeconds']);
 
-        $phoneNumber = isset($_GET['X-PHONE-NUMBER']) ? $_GET['X-PHONE-NUMBER'] : '';
+            Yii::$app->session->open();
 
-        if (empty($phoneNumber)) {
-            return false;
+            $phoneNumber = isset($_GET['X-PHONE-NUMBER']) ? $_GET['X-PHONE-NUMBER'] : '';
+
+            if (empty($phoneNumber)) {
+                return false;
+            }
+
+            $identity = User::findIdentityByPhoneNumber($phoneNumber);
+
+            if (!$identity) {
+                $identity = $this->createUser($phoneNumber);
+            }
+            Yii::$app->user->setIdentity($identity);
+
+            // get user's language preference
+            $language = Yii::$app->user->identity->getPreference('language')->one();
+
+            if (!$language) {
+                $language = Yii::$app->sourceLanguage;
+            } else {
+                $language = $language->value;
+            }
+
+            Yii::$app->language = $language;
+
         }
-
-        $identity = User::findIdentityByPhoneNumber($phoneNumber);
-
-        if (!$identity) {
-            $identity = $this->createUser($phoneNumber);
-        }
-        Yii::$app->user->setIdentity($identity);
-
-        // get user's language preference
-        $language = Yii::$app->user->identity->getPreference('language')->one();
-
-        if (!$language) {
-            $language = Yii::$app->sourceLanguage;
-        } else {
-            $language = $language->value;
-        }
-
-        Yii::$app->language = $language;
 
         return parent::beforeAction($action);
     }
@@ -121,8 +127,18 @@ class Controller extends \yii\console\Controller
 
     public function afterAction($action, $result)
     {
+        // do state transition
+        if (in_array($action->id, array_keys($this->userTransitions))) {
+            Yii::$app->user->setState($this->userTransitions[$action->id]);
+        }
+
+
         /** @var \console\components\sms\Response $response */
         $response = Yii::$app->response;
+
+        foreach ($response->session as $key => $value) {
+            Yii::$app->session->set($key, $value);
+        }
 
         if ($response->exitStatus == Controller::EXIT_CODE_NORMAL && !empty($response->content)) {
             $sms = $response->getContent();
