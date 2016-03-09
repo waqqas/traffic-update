@@ -14,6 +14,14 @@ use yii\data\ActiveDataProvider;
 
 class SmsController extends Controller
 {
+
+    // action to state mapping
+    public $userTransitions = [
+        'daily' => 'daily',
+        'now' => 'demand',
+        'stop' => 'demand',
+    ];
+
     private function getUserCity()
     {
         return $this->getPropByType('long_name', 'locality');
@@ -71,6 +79,17 @@ class SmsController extends Controller
 
         return $match;
     }
+
+    public function afterAction($action, $result)
+    {
+
+        if( in_array( $action->id, array_keys($this->userTransitions))){
+            Yii::$app->user->setState($this->userTransitions[$action->id]);
+        }
+
+        return parent::afterAction($action, $result);
+    }
+
 
     public function runCommand($command, $paramString)
     {
@@ -238,7 +257,7 @@ class SmsController extends Controller
 
             $command = self::getCommand('now', Yii::$app->user->getPhoneNumber());
 
-            Yii::info("SMS sending times: " . $amTime . " and " . $pmTime);
+//            Yii::info("SMS sending times: " . $amTime . " and " . $pmTime);
 
             /** @var \common\components\Schedule $schedule */
             $schedule = Yii::$app->schedule;
@@ -248,24 +267,23 @@ class SmsController extends Controller
 
             Yii::$app->user->setSmsSchedule($schedule->getEvents());
 
-            $sms = "bit.ly/2RoadEZ\n";
-            $sms .= Yii::t('sms', 'You will receive SMS daily at {amTime} and {pmTime}', [
+            /** @var \console\components\sms\Response $response */
+            $response = Yii::$app->response;
+//            $response->addContent('bit.ly/2RoadEZ');
+
+            $response->addContent(Yii::t('sms', 'You will receive SMS daily at {amTime} and {pmTime}', [
                 'amTime' => $amTime,
                 'pmTime' => $pmTime,
-            ]);
+            ]));
+            $response->addContent("\n");
 
             $smsCommand = new Command();
-            $sms .= "\n";
-            $sms .= $smsCommand->generateInfo('stop', false);
-            $sms .= "\n";
-            $sms .= $smsCommand->generateInfo('report', false);
-
-
-            Yii::$app->response->addContent($sms);
+            $response->addContent($smsCommand->generateInfo('stop', false));
+            $response->addContent($smsCommand->generateInfo('report', false));
 
             Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
-            Yii::$app->user->setState('daily');
+//            Yii::$app->user->setState('daily');
         }
 
         return $status;
@@ -302,17 +320,19 @@ class SmsController extends Controller
 
                     Yii::$app->language = $lang->language_id;
 
-                    $sms = "bit.ly/2RoadEZ\n";
-                    $sms .= Yii::t('sms', 'You will now receive SMS in {language}', [
+                    /** @var \console\components\sms\Response $response */
+                    $response = Yii::$app->response;
+
+                    $response->addContent(Yii::t('sms', 'You will now receive SMS in {language}', [
                         'language' => $lang->name,
-                    ]);
+                    ]));
+
+                    $response->addContent("\n");
+
                     $smsCommand = new Command();
                     foreach (['now', 'daily', 'city'] as $command) {
-                        $sms .= "\n";
-                        $sms .= $smsCommand->generateInfo($command);
+                        $response->addContent($smsCommand->generateInfo($command));
                     }
-
-                    Yii::$app->response->addContent($sms);
 
                     Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
@@ -367,20 +387,20 @@ class SmsController extends Controller
 
             $incidents = $dataProvider->getModels();
 
-            $sms = "bit.ly/2RoadEZ\n";
-            $sms .= Yii::$app->formatter->asSMS($incidents);
 
+            /** @var \console\components\sms\Response $response */
+            $response = Yii::$app->response;
+
+            $response->addContent(Yii::$app->formatter->asSMS($incidents));
+
+            $response->addContent("\n");
 
             $smsCommand = new Command();
-            $sms .= '\n\n';
-            $sms .= $smsCommand->generateInfo('report');
+            $response->addContent($smsCommand->generateInfo('report'));
             // TODO: send only if the user does not have daily subscription
-            $sms .= '\n';
-            $sms .= $smsCommand->generateInfo('daily');
+            $response->addContent($smsCommand->generateInfo('daily'));
 
-            Yii::$app->response->addContent($sms);
-
-            Yii::$app->user->setState('demand');
+//            Yii::$app->user->setState('demand');
 
             Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
@@ -412,20 +432,20 @@ class SmsController extends Controller
                 $from = $fromAddresses[0]->geometry->location->lat . "," . $fromAddresses[0]->geometry->location->lng;
                 $to = $toAddresses[0]->geometry->location->lat . "," . $toAddresses[0]->geometry->location->lng;
 
-                Yii::info('from lat,lng =' . $from);
-                Yii::info('to lat, lng =' . $to);
+//                Yii::info('from lat,lng =' . $from);
+//                Yii::info('to lat, lng =' . $to);
 
                 $routeResponse = Yii::$app->mapQuest->route($from, $to);
+
+                /** @var \console\components\sms\Response $response */
+                $response = Yii::$app->response;
 
                 if ($routeResponse) {
 
                     $prefix = '[' . $fromAddresses[0]->formatted_address . ' to ' . $toAddresses[0]->formatted_address . '] ';
 
-                    $sms = "bit.ly/2RoadEZ\n";
-                    $sms .= Yii::$app->formatter->asSMS($routeResponse, $prefix);
+                    $response->addContent(Yii::$app->formatter->asSMS($routeResponse, $prefix));
 
-
-                    Yii::$app->response->addContent($sms);
                 } else {
                     //TODO: send sms that route could not be found
                     $status = Controller::EXIT_CODE_ERROR;
@@ -451,16 +471,17 @@ class SmsController extends Controller
 
         Yii::$app->user->setSmsSchedule(null);
 
-        $sms = "bit.ly/2RoadEZ\n";
-        $sms .= Yii::t('sms', 'You will not receive daily SMS');
+        /** @var \console\components\sms\Response $response */
+        $response = Yii::$app->response;
+
+        $response->addContent(Yii::t('sms', 'You will not receive daily SMS'));
+
+        $response->addContent("\n");
 
         $smsCommand = new Command();
-        $sms .= "\n";
-        $sms .= $smsCommand->generateInfo('daily');
+        $response->addContent($smsCommand->generateInfo('daily'));
 
-        Yii::$app->response->addContent($sms);
-
-        Yii::$app->user->setState('demand');
+//        Yii::$app->user->setState('demand');
 
         Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
@@ -535,45 +556,44 @@ class SmsController extends Controller
 
                         $incident->save();
 
-                        $sms = "bit.ly/2RoadEZ\n";
-                        $sms .= Yii::t('sms', 'Thank you for reporting {incident} at {location}', [
+                        /** @var \console\components\sms\Response $response */
+                        $response = Yii::$app->response;
+
+                        $response->addContent(Yii::t('sms', 'Thank you for reporting {incident} at {location}', [
                             'incident' => Yii::t('sms', $incidentText),
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address)
-                        ]);
+                        ]));
 
-                        $sms .= "\n";
+                        $response->addContent("\n");
 
                         $smsCommand = new Command();
-                        $sms .= '\n';
-                        $sms .= $smsCommand->generateInfo('report', false);
-
-                        Yii::$app->response->addContent($sms);
+                        $response->addContent($smsCommand->generateInfo('report', false));
 
                         Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
                     } else {
-                        $sms = "bit.ly/2RoadEZ\n";
-                        $sms .= Yii::t('sms', 'Sorry, you can not report in {location}', [
+                        /** @var \console\components\sms\Response $response */
+                        $response = Yii::$app->response;
+
+                        $response->addContent(Yii::t('sms', 'Sorry, you can not report in {location}', [
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address),
-                        ]);
-                        $sms .= "\n";
+                        ]));
+
+                        $response->addContent("\n");
 
                         $smsCommand = new Command();
-                        $sms .= '\n';
-                        $sms .= $smsCommand->generateInfo('city');
-
-                        Yii::$app->response->addContent($sms);
+                        $response->addContent($smsCommand->generateInfo('city'));
 
                         Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
                     }
 
                 } else {
-                    $sms = "bit.ly/2RoadEZ\n";
-                    $sms .= Yii::t('sms', 'Sorry, {location} is not correct', [
-                        'location' => $location,
-                    ]);
+                    /** @var \console\components\sms\Response $response */
+                    $response = Yii::$app->response;
 
-                    Yii::$app->response->addContent($sms);
+                    $response->addContent(Yii::t('sms', 'Sorry, {location} is not correct', [
+                        'location' => $location,
+                    ]));
 
                 }
             } else {
@@ -619,18 +639,18 @@ class SmsController extends Controller
                     if ($localityFound) {
                         Yii::$app->user->setLocation($localityFound);
 
-                        $sms = "bit.ly/2RoadEZ\n";
-                        $sms .= Yii::t('sms', 'You will receive notifications of {city}', [
+                        /** @var \console\components\sms\Response $response */
+                        $response = Yii::$app->response;
+
+                        $response->addContent(Yii::t('sms', 'You will receive notifications of {city}', [
                             'city' => Yii::t('sms', $localityFound->long_name),
-                        ]);
+                        ]));
+
+                        $response->addContent("\n");
 
                         $smsCommand = new Command();
-                        $sms .= "\n";
-                        $sms .= $smsCommand->generateInfo('now');
-                        $sms .= "\n";
-                        $sms .= $smsCommand->generateInfo('daily');
-
-                        Yii::$app->response->addContent($sms);
+                        $response->addContent($smsCommand->generateInfo('now'));
+                        $response->addContent($smsCommand->generateInfo('daily'));
 
                         Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
@@ -651,8 +671,10 @@ class SmsController extends Controller
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
-        $sms = "bit.ly/2RoadEZ\n";
-        $sms .= Yii::t('sms', 'Help Menu:\n');
+        /** @var \console\components\sms\Response $response */
+        $response = Yii::$app->response;
+
+        $response->addContent(Yii::t('sms', 'Menu:'));
 
         if (empty($paramString)) {
             $paramString = 'now daily city';
@@ -661,13 +683,8 @@ class SmsController extends Controller
         $smsCommand = new Command();
 
         foreach (explode(' ', $paramString) as $command) {
-            $sms .= $smsCommand->generateInfo(strtolower($command));
-
-            $sms .= "\n";
-
+            $response->addContent($smsCommand->generateInfo(strtolower($command)));
         }
-
-        Yii::$app->response->addContent($sms);
 
         Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
