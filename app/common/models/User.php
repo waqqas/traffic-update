@@ -1,6 +1,7 @@
 <?php
 namespace common\models;
 
+use console\components\sms\Response;
 use raoul2000\workflow\base\SimpleWorkflowBehavior;
 use raoul2000\workflow\events\WorkflowEvent;
 use Yii;
@@ -37,7 +38,7 @@ class User extends ActiveRecord implements IdentityInterface
         );
 
         $this->on(
-          WorkflowEvent::afterEnterWorkflow(),
+          WorkflowEvent::beforeEnterWorkflow('UserWorkflow'),
             [$this, 'sendWelcomeMessage']
         );
     }
@@ -237,5 +238,6 @@ class User extends ActiveRecord implements IdentityInterface
 
     public function sendWelcomeMessage($event){
 
+        Yii::$app->response->addContent(Yii::t('sms', 'Welcome to Traffic Update Service\n'), Response::CONTENT_BEGINNING);
     }
 }

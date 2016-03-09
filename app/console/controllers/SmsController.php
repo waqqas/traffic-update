@@ -3,43 +3,17 @@
 namespace console\controllers;
 
 
-use common\components\SmsSender;
 use common\models\Incident;
 use common\models\Language;
-use common\models\User;
+use console\components\sms\Command;
 use Yii;
-use yii\console\Controller;
+use console\components\sms\Controller;
 use common\models\Smsmo;
 use common\models\Smsmt;
 use yii\data\ActiveDataProvider;
 
 class SmsController extends Controller
 {
-    /**
-     * @var string JSON encoded string to set $_GET global variable
-     */
-    public $get = '{}';
-
-    /**
-     * @var string JSON encoded string to set $_POST global variable
-     */
-    public $post = '{}';
-
-    /**
-     * @var string JSON encoded string to set $_COOKIE global variable
-     */
-    public $cookie = '{}';
-
-    /**
-     * @var string JSON encoded string to set $_COOKIE global variable
-     */
-    public $session = '{}';
-
-    public function options($actionID)
-    {
-        return ['get', 'post', 'cookie', 'session'];
-    }
-
     private function getUserCity()
     {
         return $this->getPropByType('long_name', 'locality');
@@ -69,14 +43,12 @@ class SmsController extends Controller
             return $value;
         }
 
-        foreach ($location->address_components as $address) {
-            foreach ($address->types as $userType) {
-                if ($userType == $type) {
-                    return $address->{$prop};
-                }
+        $address = $location->value;
+        foreach ($address->types as $userType) {
+            if ($userType == $type) {
+                return $address->{$prop};
             }
         }
-
         return null;
     }
 
@@ -100,100 +72,37 @@ class SmsController extends Controller
         return $match;
     }
 
-    private function createUser($phoneNumber)
+    public function runCommand($command, $paramString)
     {
-        $user = new User();
-        $user->username = $phoneNumber;
-        $user->email = "$phoneNumber@roardez.com";
-        $user->setPassword($phoneNumber);
-        $user->generateAuthKey();
-        $user->sendToStatus('init');
-        if ($user->save()) {
-            return $user;
-        }
-        return null;
 
-    }
+        $success = true;
 
-    public function beforeAction($action)
-    {
-        $_GET = json_decode($this->get, true);
-        $_POST = json_decode($this->post, true);
-        $_COOKIE = json_decode($this->cookie, true);
-        $_SESSION = json_decode($this->session, true);
+        Yii::info('command: ' . $command);
 
-        ini_set('session.gc_maxlifetime', Yii::$app->params['sessionExpirySeconds']);
+        $keywords = array_keys(Command::$availableCommands);
 
-        Yii::$app->session->open();
+        if (in_array($command, $keywords)) {
 
-        $phoneNumber = isset($_GET['X-PHONE-NUMBER']) ? $_GET['X-PHONE-NUMBER'] : '';
+            $phoneNumber = Yii::$app->user->getPhoneNumber();
+            /** @var \libphonenumber\PhoneNumber $phone */
+            $phone = Yii::$app->phone->parse($phoneNumber, 'PK');
 
-        if (empty($phoneNumber)) {
-            return false;
-        }
+            Yii::$app->ga->track([
+                'ec' => 'sms',
+                'ea' => $command,
+                'uid' => $phoneNumber,
+                'geoid' => Yii::$app->phone->getRegionCodeForNumber($phone),
+            ]);
 
-        $identity = User::findIdentityByPhoneNumber($phoneNumber);
+            $this->runAction($command, [$paramString]);
 
-        if (!$identity) {
-            $identity = $this->createUser($phoneNumber);
-        }
-        Yii::$app->user->setIdentity($identity);
-
-        // get user's language preference
-        $language = Yii::$app->user->identity->getPreference('language')->one();
-
-        if (!$language) {
-            $language = Yii::$app->sourceLanguage;
+            $success = true;
         } else {
-            $language = $language->value;
+            $success = false;
+
         }
 
-        Yii::$app->language = $language;
-
-        return parent::beforeAction($action);
-    }
-
-    public function afterAction($action, $result)
-    {
-        /** @var \console\components\sms\Response $response */
-        $response = Yii::$app->response;
-
-        if ($response->exitStatus == Controller::EXIT_CODE_NORMAL && !empty($response->content)) {
-            $sms = $response->content;
-            SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
-        }
-
-        Yii::$app->user->identity->save();
-
-        Yii::$app->session->close();
-        return parent::afterAction($action, $result);
-    }
-
-    public static function getCommand($command, $phoneNumber, $params = [])
-    {
-        // convert string to array
-        if (is_scalar($params)) {
-            $params = [$params];
-        }
-
-        $get = [
-            'X-PHONE-NUMBER' => $phoneNumber,
-        ];
-
-        $cookie = [
-            'PHPSESSID' => md5($phoneNumber),
-        ];
-
-        return implode(' ', array_merge(
-            [
-                'sms/' . $command,
-            ],
-            $params,
-            [
-                "--get='" . json_encode($get) . "'",
-                "--cookie='" . json_encode($cookie) . "'",
-            ]
-        ));
+        return $success;
 
     }
 
@@ -202,52 +111,61 @@ class SmsController extends Controller
         /** @var \common\models\Smsmo $mo */
         $mo = Smsmo::findOne(['id' => $id]);
         if ($mo) {
+            foreach (Command::$availableCommands as $keyword => $data) {
+                $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*($keyword)(.*)/i";
 
-            $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*([route|language|daily|now|stop|report|city|help]*)(.*)/i";
 
-            if (preg_match($regex, $mo->text, $output_array)) {
+                if (preg_match($regex, $mo->text, $output_array)) {
 
-                // remove the all matching
-                array_shift($output_array);
+                    // remove the all matching
+                    array_shift($output_array);
 
-                // remove leading and trailing spaces
-                $output_array = array_map('trim', $output_array);
+                    // remove leading and trailing spaces
+                    $output_array = array_map('trim', $output_array);
 
-                $command = strtolower(array_shift($output_array));
+                    $command = strtolower(array_shift($output_array));
 
-                // default command
-                if (empty($command)) {
-                    $command = 'help';
-                }
+                    // default command
+                    if (empty($command)) {
+                        $command = 'now';
+                    }
 
-                Yii::info('command: ' . $command);
 
-                if (in_array($command, ['daily', 'language', 'route', 'now', 'stop', 'report', 'city', 'help'])) {
-
-                    /** @var \libphonenumber\PhoneNumber $phone */
-                    $phone = Yii::$app->phone->parse($mo->msisdn, 'PK');
-
-                    Yii::$app->ga->track([
-                        'ec' => 'sms',
-                        'ea' => $command,
-                        'uid' => $mo->msisdn,
-                        'geoid' => Yii::$app->phone->getRegionCodeForNumber($phone),
-                    ]);
-
-                    $runCommand = self::getCommand($command, $mo->msisdn, '"' . $output_array[0] . '"');
-
-                    Yii::$app->consoleRunner->run($runCommand);
-
-                    $mo->status = 'processed';
-
-                } else {
-                    //TODO send possible formats SMS
-                    $mo->status = 'invalid';
+                    if ($this->runCommand($command, $output_array[0])) {
+                        $mo->status = 'processed';
+                    } else {
+                        $mo->status = 'invalid';
+                    }
+                    break;
 
                 }
-            } else {
-                $mo->status = 'invalid';
             }
+
+            $shortCuts = Yii::$app->session->get('shortcuts', []);
+
+            if (!empty($shortCuts)) {
+                foreach ($shortCuts as $command => $regex) {
+
+                    $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*$regex/i";
+
+                    if (preg_match($regex, $mo->text, $output_array)) {
+
+                        // remove the all matching
+                        array_shift($output_array);
+
+                        $params = array_shift($output_array);
+
+                        if ($this->runCommand($command, $params)) {
+                            $mo->status = 'processed';
+                        } else {
+                            $mo->status = 'invalid';
+                        }
+                        break;
+
+                    }
+                }
+            }
+
             $mo->save();
         }
         return Controller::EXIT_CODE_NORMAL;
@@ -284,6 +202,9 @@ class SmsController extends Controller
             $mt->save();
         }
     }
+
+
+    // SMS commands
 
     public function actionDaily($paramString = '')
     {
@@ -327,19 +248,22 @@ class SmsController extends Controller
 
             Yii::$app->user->setSmsSchedule($schedule->getEvents());
 
-            $sms = Yii::t('sms', 'You will receive SMS daily at {amTime} and {pmTime}', [
+            $sms = "bit.ly/2RoadEZ\n";
+            $sms .= Yii::t('sms', 'You will receive SMS daily at {amTime} and {pmTime}', [
                 'amTime' => $amTime,
                 'pmTime' => $pmTime,
             ]);
 
+            $smsCommand = new Command();
             $sms .= "\n";
+            $sms .= $smsCommand->generateInfo('stop', false);
+            $sms .= "\n";
+            $sms .= $smsCommand->generateInfo('report', false);
 
-            $sms .= Yii::t('sms', 'Send {message} at {shortCode} to stop daily notifications', [
-                'message' => Yii::$app->params['smsKeyword'] . " STOP",
-                'shortCode' => Yii::$app->params['smsShortCode'],
-            ]);
 
-            Yii::$app->response->content = $sms;
+            Yii::$app->response->addContent($sms);
+
+            Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
             Yii::$app->user->setState('daily');
         }
@@ -378,11 +302,20 @@ class SmsController extends Controller
 
                     Yii::$app->language = $lang->language_id;
 
-                    $sms = Yii::t('sms', 'You will now receive SMS in {language}', [
+                    $sms = "bit.ly/2RoadEZ\n";
+                    $sms .= Yii::t('sms', 'You will now receive SMS in {language}', [
                         'language' => $lang->name,
                     ]);
+                    $smsCommand = new Command();
+                    foreach (['now', 'daily', 'city'] as $command) {
+                        $sms .= "\n";
+                        $sms .= $smsCommand->generateInfo($command);
+                    }
 
-                    Yii::$app->response->content = $sms;
+                    Yii::$app->response->addContent($sms);
+
+                    Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
+
                 } else {
                     //TODO: send error SMS
                     $status = Controller::EXIT_CODE_ERROR;
@@ -434,13 +367,23 @@ class SmsController extends Controller
 
             $incidents = $dataProvider->getModels();
 
-            $sms = Yii::$app->formatter->asSMS($incidents);
+            $sms = "bit.ly/2RoadEZ\n";
+            $sms .= Yii::$app->formatter->asSMS($incidents);
 
-            Yii::info("sms:" . $sms);
 
-            Yii::$app->response->content = $sms;
+            $smsCommand = new Command();
+            $sms .= '\n\n';
+            $sms .= $smsCommand->generateInfo('report');
+            // TODO: send only if the user does not have daily subscription
+            $sms .= '\n';
+            $sms .= $smsCommand->generateInfo('daily');
+
+            Yii::$app->response->addContent($sms);
 
             Yii::$app->user->setState('demand');
+
+            Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
+
         }
 
         return $status;
@@ -477,11 +420,12 @@ class SmsController extends Controller
                 if ($routeResponse) {
 
                     $prefix = '[' . $fromAddresses[0]->formatted_address . ' to ' . $toAddresses[0]->formatted_address . '] ';
-                    $sms = Yii::$app->formatter->asSMS($routeResponse, $prefix);
 
-                    Yii::info($sms);
+                    $sms = "bit.ly/2RoadEZ\n";
+                    $sms .= Yii::$app->formatter->asSMS($routeResponse, $prefix);
 
-                    Yii::$app->response->content = $sms;
+
+                    Yii::$app->response->addContent($sms);
                 } else {
                     //TODO: send sms that route could not be found
                     $status = Controller::EXIT_CODE_ERROR;
@@ -507,11 +451,18 @@ class SmsController extends Controller
 
         Yii::$app->user->setSmsSchedule(null);
 
-        $sms = Yii::t('sms', 'You will not receive daily SMS');
+        $sms = "bit.ly/2RoadEZ\n";
+        $sms .= Yii::t('sms', 'You will not receive daily SMS');
 
-        Yii::$app->response->content = $sms;
+        $smsCommand = new Command();
+        $sms .= "\n";
+        $sms .= $smsCommand->generateInfo('daily');
+
+        Yii::$app->response->addContent($sms);
 
         Yii::$app->user->setState('demand');
+
+        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
         return $status;
     }
@@ -535,6 +486,10 @@ class SmsController extends Controller
                 $incidentText = 'unknown event';
 
                 switch ($incidentType) {
+                    case 'open':
+                        $incident->type = 0;
+                        $incidentText = 'open';
+                        break;
                     case 'construction':
                         $incident->type = 1;
                         $incidentText = 'construction';
@@ -552,7 +507,7 @@ class SmsController extends Controller
                         $incidentText = 'accident';
                         break;
                     default:
-                        $incident->type = 0;
+                        $incident->type = 100;
                         $incidentText = 'unknown event';
                 }
 
@@ -580,31 +535,45 @@ class SmsController extends Controller
 
                         $incident->save();
 
-                        $sms = Yii::t('sms', 'Thank you for reporting {incident} at {location}', [
+                        $sms = "bit.ly/2RoadEZ\n";
+                        $sms .= Yii::t('sms', 'Thank you for reporting {incident} at {location}', [
                             'incident' => Yii::t('sms', $incidentText),
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address)
                         ]);
 
-                        Yii::$app->response->content = $sms;
+                        $sms .= "\n";
+
+                        $smsCommand = new Command();
+                        $sms .= '\n';
+                        $sms .= $smsCommand->generateInfo('report', false);
+
+                        Yii::$app->response->addContent($sms);
+
+                        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
+
                     } else {
-                        $sms = Yii::t('sms', 'Sorry, you can not report in {location}', [
+                        $sms = "bit.ly/2RoadEZ\n";
+                        $sms .= Yii::t('sms', 'Sorry, you can not report in {location}', [
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address),
                         ]);
                         $sms .= "\n";
-                        $sms .= Yii::t('sms', 'Please change your city by sending {message} to {shortCode}', [
-                            'message' => 'TUP CITY <city-name>',
-                            'shortCode' => Yii::$app->params['smsShortCode'],
-                        ]);
 
-                        Yii::$app->response->content = $sms;
+                        $smsCommand = new Command();
+                        $sms .= '\n';
+                        $sms .= $smsCommand->generateInfo('city');
+
+                        Yii::$app->response->addContent($sms);
+
+                        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
                     }
 
                 } else {
-                    $sms = Yii::t('sms', 'Sorry, {location} is not correct', [
+                    $sms = "bit.ly/2RoadEZ\n";
+                    $sms .= Yii::t('sms', 'Sorry, {location} is not correct', [
                         'location' => $location,
                     ]);
 
-                    Yii::$app->response->content = $sms;
+                    Yii::$app->response->addContent($sms);
 
                 }
             } else {
@@ -650,11 +619,20 @@ class SmsController extends Controller
                     if ($localityFound) {
                         Yii::$app->user->setLocation($localityFound);
 
-                        $sms = Yii::t('sms', 'You will receive notifications of {city}', [
+                        $sms = "bit.ly/2RoadEZ\n";
+                        $sms .= Yii::t('sms', 'You will receive notifications of {city}', [
                             'city' => Yii::t('sms', $localityFound->long_name),
                         ]);
 
-                        Yii::$app->response->content = $sms;
+                        $smsCommand = new Command();
+                        $sms .= "\n";
+                        $sms .= $smsCommand->generateInfo('now');
+                        $sms .= "\n";
+                        $sms .= $smsCommand->generateInfo('daily');
+
+                        Yii::$app->response->addContent($sms);
+
+                        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
                     } else {
                         $status = Controller::EXIT_CODE_ERROR;
@@ -673,62 +651,25 @@ class SmsController extends Controller
     {
         $status = Controller::EXIT_CODE_NORMAL;
 
-        $sms = Yii::t('sms', 'Help Menu:\n');
+        $sms = "bit.ly/2RoadEZ\n";
+        $sms .= Yii::t('sms', 'Help Menu:\n');
 
         if (empty($paramString)) {
             $paramString = 'now daily city';
         }
 
+        $smsCommand = new Command();
+
         foreach (explode(' ', $paramString) as $command) {
-            switch (strtolower($command)) {
-                case 'language':
-                    $sms .= Yii::t('sms', 'To select language, send {message}\nEx: {example}', [
-                        'message' => 'TUP LANGUAGE <urdu/english> ',
-                        'example' => 'TUP LANGUAGE URDU',
-                    ]);
-                    break;
-                case 'daily':
-                    $sms .= Yii::t('sms', 'To get daily notifications, send {message}\nEx: {example}', [
-                        'message' => 'TUP DAILY <AM time> <PM time>',
-                        'example' => 'TUP DAILY 8:30 5:30'
-                    ]);
-                    break;
-                case 'now':
-                    $sms .= Yii::t('sms', 'To get current traffic situation, send {message}', [
-                        'message' => 'TUP NOW',
-                    ]);
-                    break;
-                case 'stop':
-                    $sms .= Yii::t('sms', 'To stop receiving daily notifications, send {message}', [
-                        'message' => 'TUP STOP'
-                    ]);
-                    break;
-                case 'report':
-                    $sms .= Yii::t('sms', 'To report traffic problem, send {message}\nEx: {example}', [
-                        'message' => 'TUP REPORT <congestion/accident/blockade/construction> AT <location>',
-                        'example' => 'TUP REPORT accident AT Faizabad Interchange',
-                    ]);
-                    break;
-                case 'city':
-                    $sms .= Yii::t('sms', 'To set your city, send {message}\nEx: {example}', [
-                        'message' => 'TUP CITY <city-name>',
-                        'example' => 'TUP CITY ISLAMABAD',
+            $sms .= $smsCommand->generateInfo(strtolower($command));
 
-                    ]);
-                    break;
-                case 'help':
-                    $sms .= Yii::t('sms', 'To get help on command: Send {message}\nEx: {example}', [
-                        'message' => 'TUP HELP <command>',
-                        'example' => 'TUP HELP REPORT',
-
-                    ]);
-                    break;
-            }
-            $sms .= "\n\n";
+            $sms .= "\n";
 
         }
 
-        Yii::$app->response->content = $sms;
+        Yii::$app->response->addContent($sms);
+
+        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
 
         return $status;
     }
