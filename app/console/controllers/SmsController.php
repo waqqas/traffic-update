@@ -70,7 +70,8 @@ class SmsController extends Controller
 
     private function matchUserLocation($location)
     {
-        $match = false;
+        // FIXME: disabled user's location mapping
+        $match = true;
 
         $userCity = $this->getUserCity();
         foreach ($location->address_components as $address) {
@@ -389,6 +390,11 @@ class SmsController extends Controller
 
             if( Yii::$app->user->getState() != 'UserWorkflow/daily'){
                 $response->addContent($smsCommand->generateInfo('daily'));
+            }
+            else{
+                // user already subscribed to daily SMS
+                // give user option to change the timings
+                $response->addContent($smsCommand->generateInfo('daily', 'change'));
             }
 
             $response->addSession('shortcuts', $smsCommand->shortcuts);

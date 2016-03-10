@@ -117,17 +117,17 @@ class Command
             'default' => [
                 'type' => Command::REGEX,
                 'command' => 'report',
-                'regex' => '((accident|congestion|construction|blockade|open)\s+at\s+.*)',
+                'regex' => '((congestion|open)\s+at\s+.*)',
                 'replace' => '',
                 'shortInfo' => 'To report traffic incident now, \'\'{message}\'\'\nEx: {example}',
                 'fullInfo' => 'To report traffic incident, \'\'{message}\'\'\nEx: {example}',
                 'short' => [
-                    'message' => '<congestion/accident/blockade/construction/open> AT <location>',
-                    'example' => 'accident AT Faizabad Interchange',
+                    'message' => '<congestion/open> AT <location>',
+                    'example' => 'congestion AT Faizabad Interchange',
                 ],
                 'full' => [
-                    'message' => 'REPORT <congestion/accident/blockade/construction/open> AT <location>',
-                    'example' => 'REPORT accident AT Faizabad Interchange',
+                    'message' => 'REPORT <congestion/open> AT <location>',
+                    'example' => 'REPORT congestion AT Faizabad Interchange',
                 ],
             ],
 
