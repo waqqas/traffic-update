@@ -9,6 +9,7 @@ class Command
     const DUMMY = 0;
     const NUMERIC = 1;
     const REGEX = 2;
+    const MULTI = 3;
 
 
     public $commandNumber = 1;
@@ -19,163 +20,257 @@ class Command
 
     public static $availableCommands = [
         'daily' => [
-            'type' => Command::REGEX,
-            'regex' => '((0?\d|1[0-2]):*(0\d|[0-5]\d)*\s+(0?\d|1[0-2]):*(0\d|[0-5]\d)*)',
-            'shortcutInfo' => 'To get daily notifications now, send {message}\nEx: {example}',
-            'fullInfo' => 'To get daily notifications, send {message}\nEx: {example}',
-            'shortcut' => [
-                'message' => '<AM time> <PM time>',
-                'example' => '8:00 5:30',
-            ],
-            'full' => [
-                'message' => 'DAILY <AM time> <PM time>',
-                'example' => 'DAILY 8:00 5:30',
+            'default' => [
+                'type' => Command::REGEX,
+                'command' => 'daily',
+                'regex' => '((0?\d|1[0-2]):*(0\d|[0-5]\d)*\s+(0?\d|1[0-2]):*(0\d|[0-5]\d)*)',
+                'replace' => '',
+                'shortInfo' => 'To get daily notifications now, send {message}\nEx: {example}',
+                'short' => [
+                    'message' => '<AM time> <PM time>',
+                    'example' => '8:00 5:30',
+                ],
+                'fullInfo' => 'To get daily notifications, send {message}\nEx: {example}',
+                'full' => [
+                    'message' => 'DAILY <AM time> <PM time>',
+                    'example' => 'DAILY 8:00 5:30',
+                ],
             ],
         ],
         'language' => [
-            'type' => Command::REGEX,
-            'regex' => '((urdu|english)\s*)$',
-            'shortcutInfo' => 'To select language now, send {message}\nEx: {example}',
-            'fullInfo' => 'To select language, send {message}\nEx: {example}',
-            'shortcut' => [
-                'message' => '<urdu/english>',
-                'example' => 'urdu',
+            'default' => [
+                'type' => Command::REGEX,
+                'command' => 'language',
+                'regex' => '((urdu|english)\s*)$',
+                'replace' => '',
+                'shortInfo' => 'To select language now, send {message}\nEx: {example}',
+                'short' => [
+                    'message' => '<urdu/english>',
+                    'example' => 'urdu',
+                ],
+                'fullInfo' => 'To select language, send {message}\nEx: {example}',
+                'full' => [
+                    'message' => 'LANGUAGE <urdu/english>',
+                    'example' => 'LANGUAGE urdu',
+                ],
             ],
-            'full' => [
-                'message' => 'LANGUAGE <urdu/english>',
-                'example' => 'LANGUAGE urdu',
-            ]
         ],
         'route' => [
-            'type' => Command::REGEX,
-            'regex' => '',
-            'fullInfo' => 'To get best route, send {message}\nEx: {example}',
-            'full' => [
-                'message' => 'ROUTE <source> TO <destination>',
-                'example' => 'ROUTE F-6, Islamabad TO F-10, Islamabad',
-            ]
+            'default' => [
+                'type' => Command::REGEX,
+                'command' => 'route',
+                'regex' => '',
+                'replace' => '',
+                'fullInfo' => 'To get best route, send {message}\nEx: {example}',
+                'full' => [
+                    'message' => 'ROUTE <source> TO <destination>',
+                    'example' => 'ROUTE F-6, Islamabad TO F-10, Islamabad',
+                ],
+            ],
         ],
         'now' => [
-            'type' => Command::NUMERIC,
-            'shortcutInfo' => 'To get current traffic situation now, send {message}',
-            'fullInfo' => 'To get current traffic situation, send {message}',
-            'full' => [
-                'message' => 'NOW',
+            'default' => [
+                'type' => Command::NUMERIC,
+                'command' => 'now',
+                'replace' => '',
+                'shortInfo' => 'To get current traffic situation now, send {message}',
+                'fullInfo' => 'To get current traffic situation, send {message}',
+                'full' => [
+                    'message' => 'NOW',
+                ],
             ],
         ],
         'stop' => [
-            'type' => Command::NUMERIC,
-            'shortcutInfo' => 'To stop receiving daily notifications, send {message}',
-            'fullInfo' => 'To stop receiving daily notifications, send {message}',
-            'full' => [
-                'message' => 'STOP'
+            'default' => [
+                'type' => Command::NUMERIC,
+                'command' => 'stop',
+                'replace' => '',
+                'shortInfo' => 'To stop receiving daily notifications, send {message}',
+                'fullInfo' => 'To stop receiving daily notifications, send {message}',
+                'full' => [
+                    'message' => 'STOP'
+                ],
             ],
         ],
         'report' => [
-            'type' => Command::REGEX,
-            'regex' => '((accident|congestion|construction|blockade|open)\s+at\s+.*)',
-            'shortcutInfo' => 'To report traffic incident now, {message}\nEx: {example}',
-            'fullInfo' => 'To report traffic incident, {message}\nEx: {example}',
-            'shortcut' => [
-                'message' => '<congestion/accident/blockade/construction/open> AT <location>',
-                'example' => 'accident AT Faizabad Interchange',
+            'default' => [
+                'type' => Command::REGEX,
+                'command' => 'report',
+                'regex' => '((accident|congestion|construction|blockade|open)\s+at\s+.*)',
+                'replace' => '',
+                'shortInfo' => 'To report traffic incident now, {message}\nEx: {example}',
+                'fullInfo' => 'To report traffic incident, {message}\nEx: {example}',
+                'short' => [
+                    'message' => '<congestion/accident/blockade/construction/open> AT <location>',
+                    'example' => 'accident AT Faizabad Interchange',
+                ],
+                'full' => [
+                    'message' => 'REPORT <congestion/accident/blockade/construction/open> AT <location>',
+                    'example' => 'REPORT accident AT Faizabad Interchange',
+                ],
             ],
-            'full' => [
-                'message' => 'REPORT <congestion/accident/blockade/construction/open> AT <location>',
-                'example' => 'REPORT accident AT Faizabad Interchange',
-            ]
 
         ],
         'city' => [
-            'type' => Command::REGEX,
-            'regex' => '',
-            'fullInfo' => 'To set your current city, send {message}\nEx: {example}',
-            'full' => [
-                'message' => 'CITY <city-name>',
-                'example' => 'CITY ISLAMABAD',
+            'default' => [
+                'type' => Command::REGEX,
+                'command' => 'city',
+                'regex' => '',
+                'replace' => '',
+                'fullInfo' => 'To set your current city, send {message}\nEx: {example}',
+                'full' => [
+                    'message' => 'CITY <city-name>',
+                    'example' => 'CITY ISLAMABAD',
+                ],
+            ],
+            'single_digit' => [
+                'type' => Command::MULTI,
+                'options' => [
+                    [
+                        'type' => Command::NUMERIC,
+                        'command' => 'city',
+                        'replace' => 'CITY ISLAMABAD',
+                        'shortInfo' => '{message} for Islamabad',
+                        'fullInfo' => '{message} for Islamabad',
+                        'full' => [
+                            'message' => 'CITY ISLAMABAD',
+                        ],
+                    ],
+                    [
+                        'type' => Command::NUMERIC,
+                        'command' => 'city',
+                        'replace' => 'CITY RAWALPINDI',
+                        'shortInfo' => '{message} for Rawalpindi',
+                        'fullInfo' => '{message} for Rawalpindi',
+                        'full' => [
+                            'message' => 'CITY RAWALPINDI',
+                        ],
+                    ],
+                    [
+                        'type' => Command::NUMERIC,
+                        'command' => 'city',
+                        'replace' => 'CITY LAHORE',
+                        'shortInfo' => '{message} for Lahore',
+                        'fullInfo' => '{message} for Lahore',
+                        'full' => [
+                            'message' => 'CITY LAHORE',
+                        ],
+
+                    ],
+                    [
+                        'type' => Command::NUMERIC,
+                        'command' => 'city',
+                        'replace' => 'CITY KARACHI',
+                        'shortInfo' => '{message} for Karachi',
+                        'fullInfo' => '{message} for Karachi',
+                        'full' => [
+                            'message' => 'CITY KARACHI',
+                        ],
+                    ],
+                ],
             ],
         ],
         'help' => [
-            'type' => Command::REGEX,
-            'regex' => '',
-            'fullInfo' => 'To get help on command: Send {message}\nEx: {example}',
-            'full' => [
-                'message' => 'HELP <command>',
-                'example' => 'HELP REPORT',
+            'default' => [
+                'type' => Command::REGEX,
+                'regex' => '',
+                'replace' => '',
+                'fullInfo' => 'To get help on command: Send {message}\nEx: {example}',
+                'full' => [
+                    'message' => 'HELP <command>',
+                    'example' => 'HELP REPORT',
+                ],
             ],
         ],
         '$' => [
-            'type' => Command::DUMMY,
+            'default' => [
+                'type' => Command::DUMMY,
+            ],
         ],
     ];
 
-    public function generateMessage($keyword, $shorten = true)
+    public function generateMessage($command, $shorten = true)
     {
-        $command = self::$availableCommands[$keyword];
-
-        $message = [];
+        $messages = [];
         switch ($command['type']) {
             case Command::REGEX:
                 if ($shorten && !empty($command['regex'])) {
-                    $message = [
-                        'info' => $command['shortcutInfo'],
+                    array_push($messages, [
+                        'info' => $command['shortInfo'],
                         'params' => array_map(
                             function ($param) {
                                 return Yii::$app->params['smsKeyword'] . " " . $param;
                             }
-                            , $command['shortcut']),
-                    ];
+                            , $command['short']),
+                    ]);
 
-                    $this->shortcuts[$keyword] = $command['regex'];
+                    array_push($this->shortcuts, ['command' => $command['command'], 'regex' => $command['regex']]);
                 } else {
-                    $message = [
+                    array_push($messages, [
                         'info' => $command['fullInfo'],
                         'params' => array_map(
                             function ($param) {
                                 return Yii::$app->params['smsKeyword'] . " " . $param;
                             }
                             , $command['full'])
-                    ];
+                    ]);
                 }
                 break;
             case Command::NUMERIC:
                 if ($shorten) {
-                    $message = [
-                        'info' => $command['shortcutInfo'],
+                    array_push($messages, [
+                        'info' => $command['shortInfo'],
                         'params' => [
                             'message' => Yii::$app->params['smsKeyword'] . " " . $this->commandNumber,
                             'example' => Yii::$app->params['smsKeyword'] . " " . $this->commandNumber,
                         ]
-                    ];
+                    ]);
 
-                    $this->shortcuts[$keyword] = "\\b($this->commandNumber)$";
-
+                    array_push($this->shortcuts,
+                        [
+                            'command' => $command['command'],
+                            'regex' => "\\b($this->commandNumber)$",
+                            'replace' => $command['replace'],
+                        ]);
                     $this->commandNumber++;
                 } else {
-                    $message = [
+                    array_push($messages, [
                         'info' => $command['fullInfo'],
                         'params' => array_map(
                             function ($param) {
                                 return Yii::$app->params['smsKeyword'] . " " . $param;
                             }
                             , $command['full'])
-                    ];
+                    ]);
 
                 }
                 break;
+            case Command::MULTI:
+                foreach ($command['options'] as $optionCommand) {
+                    array_splice($messages, count($messages), 0,
+                        $this->generateMessage($optionCommand, $shorten));
+                }
+
+                break;
         }
-        return $message;
+        return $messages;
 
 
     }
 
-    public function generateInfo($keyword, $shorten = true)
+    public function generateInfo($keyword, $type = 'default', $shorten = true)
     {
 
-        $message = $this->generateMessage($keyword, $shorten);
+        $command = self::$availableCommands[$keyword][$type];
 
-        if (!empty($message)) {
-            return Yii::t('sms', $message['info'], $message['params']);
+        $messages = $this->generateMessage($command, $shorten);
+
+        if (!empty($messages)) {
+            $output = [];
+            foreach ($messages as $message) {
+                array_push($output, Yii::t('sms', $message['info'], $message['params']));
+            }
+            return $output;
         }
         return null;
     }

@@ -127,7 +127,7 @@ class SmsController extends Controller
         /** @var \common\models\Smsmo $mo */
         $mo = Smsmo::findOne(['id' => $id]);
         if ($mo) {
-            foreach (Command::$availableCommands as $keyword => $data) {
+            foreach (array_keys(Command::$availableCommands) as $keyword) {
                 $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*($keyword)(.*)/i";
 
 
@@ -160,18 +160,18 @@ class SmsController extends Controller
             $shortCuts = Yii::$app->session->get('shortcuts', []);
 
             if (!empty($shortCuts)) {
-                foreach ($shortCuts as $command => $regex) {
+                foreach ($shortCuts as $info) {
 
-                    $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*$regex/i";
+                    $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*" . $info['regex']. "/i";
 
                     if (preg_match($regex, $mo->text, $output_array)) {
 
                         // remove the all matching
                         array_shift($output_array);
 
-                        $params = array_shift($output_array);
+                        $params = empty($info['replace']) ? array_shift($output_array) : $info['replace'];
 
-                        if ($this->runCommand($command, $params)) {
+                        if ($this->runCommand($info['command'], $params)) {
                             $mo->status = 'processed';
                         } else {
                             $mo->status = 'invalid';
@@ -275,8 +275,8 @@ class SmsController extends Controller
             $response->addContent("\n");
 
             $smsCommand = new Command();
-            $response->addContent($smsCommand->generateInfo('stop', false));
-            $response->addContent($smsCommand->generateInfo('report', false));
+            $response->addContent($smsCommand->generateInfo('stop', 'default', false));
+            $response->addContent($smsCommand->generateInfo('report', 'default', false));
 
             $response->addSession('shortcuts', $smsCommand->shortcuts);
         }
@@ -389,10 +389,12 @@ class SmsController extends Controller
             $response->addContent(Yii::$app->formatter->asSMS($incidents));
 
             $smsCommand = new Command();
-            $response->addContent($smsCommand->generateInfo('report'));
-            // TODO: send only if the user does not have daily subscription
 
-            $response->addContent($smsCommand->generateInfo('daily'));
+            $response->addContent($smsCommand->generateInfo('report'));
+
+            if( Yii::$app->user->getState() != 'UserWorkflow/daily'){
+                $response->addContent($smsCommand->generateInfo('daily'));
+            }
 
             $response->addSession('shortcuts', $smsCommand->shortcuts);
 
@@ -557,9 +559,9 @@ class SmsController extends Controller
                         $response->addContent("\n");
 
                         $smsCommand = new Command();
-                        $response->addContent($smsCommand->generateInfo('report', false));
+                        $response->addContent($smsCommand->generateInfo('report', 'default',  false));
 
-                        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
+                        $response->addSession('shortcuts', $smsCommand->shortcuts);
 
                     } else {
                         /** @var \console\components\sms\Response $response */
@@ -574,7 +576,7 @@ class SmsController extends Controller
                         $smsCommand = new Command();
                         $response->addContent($smsCommand->generateInfo('city'));
 
-                        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
+                        $response->addSession('shortcuts', $smsCommand->shortcuts);
                     }
 
                 } else {
@@ -642,7 +644,7 @@ class SmsController extends Controller
                         $response->addContent($smsCommand->generateInfo('now'));
                         $response->addContent($smsCommand->generateInfo('daily'));
 
-                        Yii::$app->session->set('shortcuts', $smsCommand->shortcuts);
+                        $response->addSession('shortcuts', $smsCommand->shortcuts);
 
                     } else {
                         $status = Controller::EXIT_CODE_ERROR;
@@ -681,4 +683,17 @@ class SmsController extends Controller
         return $status;
     }
 
+    public function actionTest($keyword, $type =  'default', $shorten = true){
+
+        $smsCommand = new Command();
+
+        print "output: $keyword \n ";
+        print_r($smsCommand->generateInfo($keyword, $type, $shorten));
+
+        print "shortcuts: $keyword \n ";
+        print_r($smsCommand->shortcuts);
+
+
+        return Controller::EXIT_CODE_NORMAL;
+    }
 }
