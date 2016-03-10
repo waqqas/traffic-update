@@ -272,11 +272,11 @@ class SmsController extends Controller
                 'amTime' => $amTime,
                 'pmTime' => $pmTime,
             ]));
-            $response->addContent("\n");
 
             $smsCommand = new Command();
+            $response->addContent($smsCommand->generateInfo('daily'));
             $response->addContent($smsCommand->generateInfo('stop', 'default', false));
-            $response->addContent($smsCommand->generateInfo('report', 'default', false));
+            $response->addContent($smsCommand->generateInfo('now', 'default', false));
 
             $response->addSession('shortcuts', $smsCommand->shortcuts);
         }

@@ -199,7 +199,7 @@ class Command
                         'info' => $command['shortInfo'],
                         'params' => array_map(
                             function ($param) {
-                                return Yii::$app->params['smsKeyword'] . " " . $param;
+                                return trim(Yii::$app->params['smsKeyword'] . " " . $param);
                             }
                             , $command['short']),
                     ]);
@@ -210,7 +210,7 @@ class Command
                         'info' => $command['fullInfo'],
                         'params' => array_map(
                             function ($param) {
-                                return Yii::$app->params['smsKeyword'] . " " . $param;
+                                return trim(Yii::$app->params['smsKeyword'] . " " . $param);
                             }
                             , $command['full'])
                     ]);
@@ -221,8 +221,8 @@ class Command
                     array_push($messages, [
                         'info' => $command['shortInfo'],
                         'params' => [
-                            'message' => Yii::$app->params['smsKeyword'] . " " . $this->commandNumber,
-                            'example' => Yii::$app->params['smsKeyword'] . " " . $this->commandNumber,
+                            'message' => trim(Yii::$app->params['smsKeyword'] . " " . $this->commandNumber),
+                            'example' => trim(Yii::$app->params['smsKeyword'] . " " . $this->commandNumber),
                         ]
                     ]);
 
@@ -238,7 +238,7 @@ class Command
                         'info' => $command['fullInfo'],
                         'params' => array_map(
                             function ($param) {
-                                return Yii::$app->params['smsKeyword'] . " " . $param;
+                                return trim(Yii::$app->params['smsKeyword'] . " " . $param);
                             }
                             , $command['full'])
                     ]);

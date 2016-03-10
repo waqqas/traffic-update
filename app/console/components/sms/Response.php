@@ -33,7 +33,7 @@ class Response extends \yii\console\Response
     public function getContent()
     {
         if (is_array($this->content)) {
-            return implode('\n', $this->content);
+            return implode('\n\n', $this->content);
         }
         return $this->content;
     }
