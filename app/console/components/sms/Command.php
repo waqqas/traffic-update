@@ -30,12 +30,28 @@ class Command
                 'command' => 'daily',
                 'regex' => '((0?\d|1[0-2]):*(0\d|[0-5]\d)*\s+(0?\d|1[0-2]):*(0\d|[0-5]\d)*)',
                 'replace' => '',
-                'shortInfo' => 'To get daily notifications now, send {message}\nEx: {example}',
+                'shortInfo' => 'To get daily notifications now, send \'\'{message}\'\'\nEx: {example}',
                 'short' => [
                     'message' => '<AM time> <PM time>',
                     'example' => '8:00 5:30',
                 ],
-                'fullInfo' => 'To get daily notifications, send {message}\nEx: {example}',
+                'fullInfo' => 'To get daily notifications, send \'\'{message}\'\'\nEx: {example}',
+                'full' => [
+                    'message' => 'DAILY <AM time> <PM time>',
+                    'example' => 'DAILY 8:00 5:30',
+                ],
+            ],
+            'change' => [
+                'type' => Command::REGEX,
+                'command' => 'daily',
+                'regex' => '((0?\d|1[0-2]):*(0\d|[0-5]\d)*\s+(0?\d|1[0-2]):*(0\d|[0-5]\d)*)',
+                'replace' => '',
+                'shortInfo' => 'To change daily notification times now, send two times like \'\'{message}\'\'\nEx: {example}',
+                'short' => [
+                    'message' => '<AM time> <PM time>',
+                    'example' => '8:00 5:30',
+                ],
+                'fullInfo' => 'To change daily notification times, send two times like \'\'{message}\'\'\nEx: {example}',
                 'full' => [
                     'message' => 'DAILY <AM time> <PM time>',
                     'example' => 'DAILY 8:00 5:30',
@@ -48,12 +64,12 @@ class Command
                 'command' => 'language',
                 'regex' => '((urdu|english)\s*)$',
                 'replace' => '',
-                'shortInfo' => 'To select language now, send {message}\nEx: {example}',
+                'shortInfo' => 'To select language now, send \'\'{message}\'\'\nEx: {example}',
                 'short' => [
                     'message' => '<urdu/english>',
                     'example' => 'urdu',
                 ],
-                'fullInfo' => 'To select language, send {message}\nEx: {example}',
+                'fullInfo' => 'To select language, send \'\'{message}\'\'\nEx: {example}',
                 'full' => [
                     'message' => 'LANGUAGE <urdu/english>',
                     'example' => 'LANGUAGE urdu',
@@ -66,7 +82,7 @@ class Command
                 'command' => 'route',
                 'regex' => '',
                 'replace' => '',
-                'fullInfo' => 'To get best route, send {message}\nEx: {example}',
+                'fullInfo' => 'To get best route, send \'\'{message}\'\'\nEx: {example}',
                 'full' => [
                     'message' => 'ROUTE <source> TO <destination>',
                     'example' => 'ROUTE F-6, Islamabad TO F-10, Islamabad',
@@ -78,8 +94,8 @@ class Command
                 'type' => Command::NUMERIC,
                 'command' => 'now',
                 'replace' => '',
-                'shortInfo' => 'To get current traffic situation now, send {message}',
-                'fullInfo' => 'To get current traffic situation, send {message}',
+                'shortInfo' => 'To get current traffic situation now, send \'\'{message}\'\'',
+                'fullInfo' => 'To get current traffic situation, send \'\'{message}\'\'',
                 'full' => [
                     'message' => 'NOW',
                 ],
@@ -90,8 +106,8 @@ class Command
                 'type' => Command::NUMERIC,
                 'command' => 'stop',
                 'replace' => '',
-                'shortInfo' => 'To stop receiving daily notifications, send {message}',
-                'fullInfo' => 'To stop receiving daily notifications, send {message}',
+                'shortInfo' => 'To stop receiving daily notifications, send \'\'{message}\'\'',
+                'fullInfo' => 'To stop receiving daily notifications, send \'\'{message}\'\'',
                 'full' => [
                     'message' => 'STOP'
                 ],
@@ -103,8 +119,8 @@ class Command
                 'command' => 'report',
                 'regex' => '((accident|congestion|construction|blockade|open)\s+at\s+.*)',
                 'replace' => '',
-                'shortInfo' => 'To report traffic incident now, {message}\nEx: {example}',
-                'fullInfo' => 'To report traffic incident, {message}\nEx: {example}',
+                'shortInfo' => 'To report traffic incident now, \'\'{message}\'\'\nEx: {example}',
+                'fullInfo' => 'To report traffic incident, \'\'{message}\'\'\nEx: {example}',
                 'short' => [
                     'message' => '<congestion/accident/blockade/construction/open> AT <location>',
                     'example' => 'accident AT Faizabad Interchange',
@@ -122,7 +138,7 @@ class Command
                 'command' => 'city',
                 'regex' => '',
                 'replace' => '',
-                'fullInfo' => 'To set your current city, send {message}\nEx: {example}',
+                'fullInfo' => 'To set your current city, send \'\'{message}\'\'\nEx: {example}',
                 'full' => [
                     'message' => 'CITY <city-name>',
                     'example' => 'CITY ISLAMABAD',
@@ -135,8 +151,8 @@ class Command
                         'type' => Command::NUMERIC,
                         'command' => 'city',
                         'replace' => 'CITY ISLAMABAD',
-                        'shortInfo' => '{message} for Islamabad',
-                        'fullInfo' => '{message} for Islamabad',
+                        'shortInfo' => '\'\'{message}\'\' for Islamabad',
+                        'fullInfo' => '\'\'{message}\'\' for Islamabad',
                         'full' => [
                             'message' => 'CITY ISLAMABAD',
                         ],
@@ -145,8 +161,8 @@ class Command
                         'type' => Command::NUMERIC,
                         'command' => 'city',
                         'replace' => 'CITY RAWALPINDI',
-                        'shortInfo' => '{message} for Rawalpindi',
-                        'fullInfo' => '{message} for Rawalpindi',
+                        'shortInfo' => '\'\'{message}\'\' for Rawalpindi',
+                        'fullInfo' => '\'\'{message}\'\' for Rawalpindi',
                         'full' => [
                             'message' => 'CITY RAWALPINDI',
                         ],
@@ -155,8 +171,8 @@ class Command
                         'type' => Command::NUMERIC,
                         'command' => 'city',
                         'replace' => 'CITY LAHORE',
-                        'shortInfo' => '{message} for Lahore',
-                        'fullInfo' => '{message} for Lahore',
+                        'shortInfo' => '\'\'{message}\'\' for Lahore',
+                        'fullInfo' => '\'\'{message}\'\' for Lahore',
                         'full' => [
                             'message' => 'CITY LAHORE',
                         ],
@@ -166,8 +182,8 @@ class Command
                         'type' => Command::NUMERIC,
                         'command' => 'city',
                         'replace' => 'CITY KARACHI',
-                        'shortInfo' => '{message} for Karachi',
-                        'fullInfo' => '{message} for Karachi',
+                        'shortInfo' => '\'\'{message}\'\' for Karachi',
+                        'fullInfo' => '\'\'{message}\'\' for Karachi',
                         'full' => [
                             'message' => 'CITY KARACHI',
                         ],
@@ -180,7 +196,7 @@ class Command
                 'type' => Command::REGEX,
                 'regex' => '',
                 'replace' => '',
-                'fullInfo' => 'To get help on command: Send {message}\nEx: {example}',
+                'fullInfo' => 'To get help on command: Send \'\'{message}\'\'\nEx: {example}',
                 'full' => [
                     'message' => 'HELP <command>',
                     'example' => 'HELP REPORT',

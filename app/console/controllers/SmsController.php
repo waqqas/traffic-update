@@ -266,12 +266,12 @@ class SmsController extends Controller
             $response = Yii::$app->response;
 
             $response->addContent(Yii::t('sms', 'You will now receive SMS daily at {amTime} and {pmTime}', [
-                'amTime' => $amTime,
-                'pmTime' => $pmTime,
+                'amTime' => date('g:i A', strtotime($amTime)),
+                'pmTime' => date('g:i A', strtotime($pmTime)),
             ]));
 
             $smsCommand = new Command();
-            $response->addContent($smsCommand->generateInfo('daily'));
+            $response->addContent($smsCommand->generateInfo('daily', 'change'));
             $response->addContent($smsCommand->generateInfo('stop', 'default', false));
             $response->addContent($smsCommand->generateInfo('now', 'default', false));
 
