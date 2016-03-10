@@ -234,17 +234,17 @@ class SmsController extends Controller
             $commandParams = array_map('trim', $commandParams);
 
             if (empty($commandParams[0])) {
-                $commandParams[0] = '8';  // 8 am
+                $commandParams[0] = Yii::$app->params['daily']['amHours'];
             }
             if (empty($commandParams[1])) {
-                $commandParams[1] = '00';  // 0 minutes
+                $commandParams[1] = Yii::$app->params['daily']['amMinutes'];
             }
 
             if (empty($commandParams[2])) {
-                $commandParams[2] = '5';  // 5 pm
+                $commandParams[2] = Yii::$app->params['daily']['pmHours'];
             }
             if (empty($commandParams[3])) {
-                $commandParams[3] = '00';  // 0 minutes
+                $commandParams[3] = Yii::$app->params['daily']['pmMinutes'];
             }
 
 
@@ -253,8 +253,6 @@ class SmsController extends Controller
 
 
             $command = self::getCommand('now', Yii::$app->user->getPhoneNumber());
-
-//            Yii::info("SMS sending times: " . $amTime . " and " . $pmTime);
 
             /** @var \common\components\Schedule $schedule */
             $schedule = Yii::$app->schedule;
@@ -266,9 +264,8 @@ class SmsController extends Controller
 
             /** @var \console\components\sms\Response $response */
             $response = Yii::$app->response;
-//            $response->addContent('bit.ly/2RoadEZ');
 
-            $response->addContent(Yii::t('sms', 'You will receive SMS daily at {amTime} and {pmTime}', [
+            $response->addContent(Yii::t('sms', 'You will now receive SMS daily at {amTime} and {pmTime}', [
                 'amTime' => $amTime,
                 'pmTime' => $pmTime,
             ]));
@@ -321,8 +318,6 @@ class SmsController extends Controller
                     $response->addContent(Yii::t('sms', 'You will now receive SMS in {language}', [
                         'language' => $lang->name,
                     ]));
-
-                    $response->addContent("\n");
 
                     $smsCommand = new Command();
                     foreach (['now', 'daily', 'city'] as $command) {
@@ -470,8 +465,6 @@ class SmsController extends Controller
 
         $response->addContent(Yii::t('sms', 'You will not receive daily SMS'));
 
-        $response->addContent("\n");
-
         $smsCommand = new Command();
         $response->addContent($smsCommand->generateInfo('daily'));
 
@@ -556,8 +549,6 @@ class SmsController extends Controller
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address)
                         ]));
 
-                        $response->addContent("\n");
-
                         $smsCommand = new Command();
                         $response->addContent($smsCommand->generateInfo('report', 'default',  false));
 
@@ -570,8 +561,6 @@ class SmsController extends Controller
                         $response->addContent(Yii::t('sms', 'Sorry, you can not report in {location}', [
                             'location' => Yii::t('sms', $incidentLocation[0]->formatted_address),
                         ]));
-
-                        $response->addContent("\n");
 
                         $smsCommand = new Command();
                         $response->addContent($smsCommand->generateInfo('city'));
@@ -637,8 +626,6 @@ class SmsController extends Controller
                         $response->addContent(Yii::t('sms', 'You will receive notifications of {city}', [
                             'city' => Yii::t('sms', $localityFound->long_name),
                         ]));
-
-                        $response->addContent("\n");
 
                         $smsCommand = new Command();
                         $response->addContent($smsCommand->generateInfo('now'));
