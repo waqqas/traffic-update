@@ -13,7 +13,12 @@ class Command
 
 
     public $commandNumber = 1;
-
+/*
+ * Each entry in the shortcuts is an array with following attributes
+ * 'regex' : Regular expression to validate that the parameters are valid
+ * 'command': command to run if the regex
+ * 'replace': (optional) replace the parameters passed by the regex
+ */
     public $shortcuts = [];
 
     // regex must be such that $matches[1] catches all the parameters after keyword (e.g. TUP)
