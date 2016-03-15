@@ -146,7 +146,7 @@ class SmsController extends Controller
 
                     // default command
                     if (empty($command)) {
-                        $command = 'now';
+                        $command = 'daily';
                     }
 
 
