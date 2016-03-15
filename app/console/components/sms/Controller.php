@@ -32,6 +32,8 @@ class Controller extends \yii\console\Controller
 
     public $userTransitions = [];
 
+    public $sessionActions = [];
+
     public function options($actionID)
     {
         return ['get', 'post', 'cookie', 'session'];
@@ -83,8 +85,7 @@ class Controller extends \yii\console\Controller
 
     public function beforeAction($action)
     {
-        if (!Yii::$app->session->isActive) {
-
+        if( in_array( $action->id, $this->sessionActions)){
 
             $_GET = json_decode($this->get, true);
             $_POST = json_decode($this->post, true);
@@ -127,30 +128,31 @@ class Controller extends \yii\console\Controller
 
     public function afterAction($action, $result)
     {
-        // do state transition
-        if (in_array($action->id, array_keys($this->userTransitions))) {
-            Yii::$app->user->setState($this->userTransitions[$action->id]);
-        }
+        if( in_array( $action->id, $this->sessionActions)) {
+            // do state transition
+            if (in_array($action->id, array_keys($this->userTransitions))) {
+                Yii::$app->user->setState($this->userTransitions[$action->id]);
+            }
 
+            /** @var \console\components\sms\Response $response */
+            $response = Yii::$app->response;
 
-        /** @var \console\components\sms\Response $response */
-        $response = Yii::$app->response;
+            foreach ($response->session as $key => $value) {
+                Yii::$app->session->set($key, $value);
+            }
 
-        foreach ($response->session as $key => $value) {
-            Yii::$app->session->set($key, $value);
-        }
-
-        if ($response->exitStatus == Controller::EXIT_CODE_NORMAL && !empty($response->content)) {
-            $sms = $response->getContent();
+            if ($response->exitStatus == Controller::EXIT_CODE_NORMAL && !empty($response->content)) {
+                $sms = $response->getContent();
 
 //            Yii::info("sms: " . $sms);
 
-            SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+                SmsSender::queueSend(Yii::$app->user->getPhoneNumber(), $sms);
+            }
+
+            Yii::$app->user->identity->save();
+
+            Yii::$app->session->close();
         }
-
-        Yii::$app->user->identity->save();
-
-        Yii::$app->session->close();
         return parent::afterAction($action, $result);
     }
 }

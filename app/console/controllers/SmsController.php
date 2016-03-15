@@ -61,10 +61,12 @@ class SmsController extends Controller
 
         // action to state mapping
         $this->userTransitions = [
-        'daily' => 'daily',
-        'now' => 'demand',
-        'stop' => 'demand',
-    ];
+            'daily' => 'daily',
+            'now' => 'demand',
+            'stop' => 'demand',
+        ];
+
+        $this->sessionActions = ['mo', 'mt', 'send-all'];
     }
 
 
@@ -163,7 +165,7 @@ class SmsController extends Controller
             if (!empty($shortCuts)) {
                 foreach ($shortCuts as $info) {
 
-                    $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*" . $info['regex']. "/i";
+                    $regex = "/" . Yii::$app->params['smsKeyword'] . "\\s*" . $info['regex'] . "/i";
 
                     if (preg_match($regex, $mo->text, $output_array)) {
 
@@ -388,10 +390,9 @@ class SmsController extends Controller
 
             $response->addContent($smsCommand->generateInfo('report'));
 
-            if( Yii::$app->user->getState() != 'UserWorkflow/daily'){
+            if (Yii::$app->user->getState() != 'UserWorkflow/daily') {
                 $response->addContent($smsCommand->generateInfo('daily'));
-            }
-            else{
+            } else {
                 // user already subscribed to daily SMS
                 // give user option to change the timings
                 $response->addContent($smsCommand->generateInfo('daily', 'change'));
@@ -556,7 +557,7 @@ class SmsController extends Controller
                         ]));
 
                         $smsCommand = new Command();
-                        $response->addContent($smsCommand->generateInfo('report', 'default',  false));
+                        $response->addContent($smsCommand->generateInfo('report', 'default', false));
 
                         $response->addSession('shortcuts', $smsCommand->shortcuts);
 
@@ -676,7 +677,8 @@ class SmsController extends Controller
         return $status;
     }
 
-    public function actionTest($keyword, $type =  'default', $shorten = true){
+    public function actionTest($keyword, $type = 'default', $shorten = true)
+    {
 
         $smsCommand = new Command();
 
