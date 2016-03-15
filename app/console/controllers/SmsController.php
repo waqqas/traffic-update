@@ -485,108 +485,76 @@ class SmsController extends Controller
         $status = Controller::EXIT_CODE_NORMAL;
 
         // route command and three parameters
-        if (preg_match('/(.*)( at )(.*)/i', $paramString, $commandParams)) {
+        if (preg_match('/(.*)/i', $paramString, $commandParams)) {
             // remove the all matching
             array_shift($commandParams);
 
-            // three parameters to route command
-            if (count($commandParams) == 3) {
-                $incidentType = $commandParams[0];
-                $location = $commandParams[2];
+            $incidentType = 'congestion';
+            $location = $commandParams[0];
 
-                $incident = new Incident();
+            $incident = new Incident();
 
-                $incidentText = 'unknown event';
+            $incidentText = 'unknown';
 
-                switch ($incidentType) {
-                    case 'open':
-                        $incident->type = 0;
-                        $incidentText = 'open';
-                        break;
-                    case 'construction':
-                        $incident->type = 1;
-                        $incidentText = 'construction';
-                        break;
-                    case 'blockade':
-                        $incident->type = 2;
-                        $incidentText = 'blockade';
-                        break;
-                    case 'congestion':
-                        $incident->type = 3;
-                        $incidentText = 'congestion';
-                        break;
-                    case 'accident':
-                        $incident->type = 4;
-                        $incidentText = 'accident';
-                        break;
-                    default:
-                        $incident->type = 100;
-                        $incidentText = 'unknown event';
-                }
-
-                $incidentLocation = Yii::$app->googleMaps->geocode($location);
-
-                if (count($incidentLocation) > 0) {
-
-                    if ($this->matchUserLocation($incidentLocation[0])) {
-
-                        $incident->lat = $incidentLocation[0]->geometry->location->lat;
-                        $incident->lng = $incidentLocation[0]->geometry->location->lng;
-                        $incident->location = $incidentLocation[0]->formatted_address;
-                        $incident->description = ucfirst($incidentText);
-                        $incident->severity = 1;
-                        $incident->eventCode = 1;
-                        $incident->startTime = time();
-                        $incident->endTime = $incident->startTime + (30 * 60);  // 30 minutes
-                        $incident->delayFromFreeFlow = 10;
-                        $incident->delayFromTypical = 10;
-                        $incident->created_at = 0;
-                        $incident->updated_at = 0;
-
-                        //disable it, till it is confirmed by the admin
-                        $incident->enabled = 0;
-
-                        $incident->save();
-
-                        /** @var \console\components\sms\Response $response */
-                        $response = Yii::$app->response;
-
-                        $response->addContent(Yii::t('sms', 'Thank you for reporting {incident} at {location}', [
-                            'incident' => Yii::t('sms', $incidentText),
-                            'location' => Yii::t('sms', $incidentLocation[0]->formatted_address)
-                        ]));
-
-                        $smsCommand = new Command();
-                        $response->addContent($smsCommand->generateInfo('report', 'default', false));
-
-                        $response->addSession('shortcuts', $smsCommand->shortcuts);
-
-                    } else {
-                        /** @var \console\components\sms\Response $response */
-                        $response = Yii::$app->response;
-
-                        $response->addContent(Yii::t('sms', 'Sorry, you can not report in {location}', [
-                            'location' => Yii::t('sms', $incidentLocation[0]->formatted_address),
-                        ]));
-
-                        $smsCommand = new Command();
-                        $response->addContent($smsCommand->generateInfo('city'));
-
-                        $response->addSession('shortcuts', $smsCommand->shortcuts);
-                    }
-
-                } else {
-                    /** @var \console\components\sms\Response $response */
-                    $response = Yii::$app->response;
-
-                    $response->addContent(Yii::t('sms', 'Sorry, {location} is not correct', [
-                        'location' => $location,
-                    ]));
-
-                }
-            } else {
-                $status = Controller::EXIT_CODE_ERROR;
+            switch ($incidentType) {
+                case 'open':
+                    $incident->type = 0;
+                    $incidentText = 'open';
+                    break;
+                case 'construction':
+                    $incident->type = 1;
+                    $incidentText = 'construction';
+                    break;
+                case 'blockade':
+                    $incident->type = 2;
+                    $incidentText = 'blockade';
+                    break;
+                case 'congestion':
+                    $incident->type = 3;
+                    $incidentText = 'congestion';
+                    break;
+                case 'accident':
+                    $incident->type = 4;
+                    $incidentText = 'accident';
+                    break;
+                default:
+                    $incident->type = 100;
+                    $incidentText = 'unknown event';
             }
+
+            $incident->lat = 0;
+            $incident->lng = 0;
+            $incident->location = $location;
+            $incident->description = ucfirst($incidentText);
+            $incident->severity = 1;
+            $incident->eventCode = 1;
+            $incident->startTime = time();
+            $incident->endTime = $incident->startTime + (30 * 60);  // 30 minutes
+            $incident->delayFromFreeFlow = 10;
+            $incident->delayFromTypical = 10;
+            $incident->created_at = 0;
+            $incident->updated_at = 0;
+
+            //disable it, till it is confirmed by the admin
+            $incident->enabled = 0;
+
+            $incident->save();
+
+            /** @var \console\components\sms\Response $response */
+            $response = Yii::$app->response;
+
+            $response->addContent(Yii::t('sms',
+                'Thank you for reporting.'));
+
+            $response->addContent(Yii::t('sms',
+                'Your report will be verified from other sources before being sent to others.'));
+
+//                    $smsCommand = new Command();
+//                    $response->addContent($smsCommand->generateInfo('report', 'default', false));
+//
+//                    $response->addSession('shortcuts', $smsCommand->shortcuts);
+
+
         } else {
             $status = Controller::EXIT_CODE_ERROR;
         }
