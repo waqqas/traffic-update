@@ -66,7 +66,7 @@ class SmsController extends Controller
             'stop' => 'demand',
         ];
 
-        $this->sessionActions = ['mo', 'mt', 'send-all'];
+        $this->sessionActions = ['mo', 'mt', 'send-all' , 'now'];
     }
 
 
